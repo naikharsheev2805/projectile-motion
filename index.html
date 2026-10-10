@@ -50,6 +50,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;background:var(--canvas)
 .dock svg{width:16px;height:16px;fill:#fff}
 #tl{font:12.5px ui-monospace,Menlo,monospace;color:var(--muted);width:58px;text-align:right}
 main.fs{position:fixed;inset:0;z-index:50;height:auto}
+@media(max-width:1200px){.tools .lb{display:none}}
 .grab{display:none;position:sticky;top:0;z-index:3;height:36px;margin:0 -20px 6px;background:var(--panel);align-items:center;justify-content:center;cursor:ns-resize;touch-action:none}
 .grab i{width:44px;height:5px;border-radius:3px;background:var(--axis);opacity:.45}
 [hidden]{display:none!important}
@@ -80,12 +81,17 @@ aside.col>:not(.grab){display:none}
 .dock .sp{width:auto;height:30px;border-radius:15px;padding:0 11px;background:var(--panel);color:var(--text);font:12px ui-monospace,Menlo,monospace;flex:none}
 canvas{touch-action:none}
 .res .w2{grid-column:span 2}
+.res em{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:3px;font-family:Georgia,serif}
+.ver{margin:26px 0 4px;text-align:center;font-size:11px;color:var(--muted);letter-spacing:.06em}
 #tzi,#tzo,#tzr{display:none}main.orb #tzi,main.orb #tzo,main.orb #tzr{display:flex}
 main.orb #tsc,main.orb #tpin,main.orb #tclr,main.orb #ttg{display:none}
 .bch button{display:inline-flex;align-items:center;gap:7px}
 .bch button i{width:9px;height:9px;border-radius:50%;background:var(--bc);box-shadow:0 0 0 1.5px var(--bc);opacity:.4}
 .chips.bch button.on{background:var(--card);border-color:var(--accent);color:var(--text)}
 .chips.bch button.on i{opacity:1}
+.busy{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 20px;box-shadow:0 8px 30px rgba(0,0,0,.16);z-index:6;font-size:14px;white-space:nowrap}
+.busy i{width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 select{width:100%;background:var(--card);border:1px solid var(--line);color:var(--text);font-size:14px;font-family:inherit;padding:10px 12px;border-radius:10px;margin-bottom:14px;outline:0}
 select:focus{border-color:var(--accent)}
 .go{width:100%;border:0;background:var(--accent);color:#fff;font-size:14.5px;font-weight:500;font-family:inherit;padding:11px;border-radius:11px;cursor:pointer;transition:transform .1s}
@@ -104,9 +110,9 @@ select:focus{border-color:var(--accent)}
   <div class="grab" id="grab" aria-label="Drag to resize"><i></i><button class="chev" id="chev" aria-label="Expand or collapse settings"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
   <header>
     <svg viewBox="0 0 32 32"><path d="M3 27C9 3 21 3 29 27"/><circle cx="16" cy="9.6" r="2.2" fill="currentColor" style="fill:var(--accent)"/></svg>
-    <div><h1>Projectile Motion</h1><p>Motion under constant gravity</p></div>
+    <div><h1>Projectile Motion</h1><p id="sub">Motion under constant gravity</p></div>
   </header>
-  <div class="tabs" id="tabs"><button class="on" data-t="tp">Playground</button><button data-t="tc">Calculate</button><button data-t="to">Orbit</button></div>
+  <div class="tabs" id="tabs"><button class="on" data-t="tp">Playground</button><button data-t="tc">Calculate</button><button data-t="to">Gravitation</button></div>
   <section id="tp">
     <div id="ctl"></div>
     <h2 id="gh">Gravity</h2>
@@ -148,15 +154,18 @@ select:focus{border-color:var(--accent)}
     <div class="res" id="ores"></div>
     <h2>View</h2>
     <div class="chips" id="ovw"></div>
+    <div class="sw"><span>Kepler’s 2nd law · equal areas</span><button id="kp2" aria-label="Toggle equal areas"></button></div>
     <h2>Focus on</h2>
     <div class="chips" id="ofc"></div>
     <h2>Simulate for</h2>
     <div class="chips" id="odu"></div>
   </section>
+  <p class="ver">Build G7 · Gravitation</p>
 </aside>
 <main>
   <canvas id="cv"></canvas>
   <div class="toast" id="toast"></div>
+  <div class="busy" id="busy" hidden><i></i><span id="busyt">Running calculations…</span></div>
   <div class="tools">
     <button id="tzi" title="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
     <button id="tzo" title="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
@@ -264,8 +273,9 @@ function view(){
   let X=Math.max(R.Rg*1.1,8),Y=Math.max(R.Hm*1.25,6);
   pins.forEach(p=>{X=Math.max(X,p.Rg*1.1);Y=Math.max(Y,p.Hm*1.25)});if(tgt)X=Math.max(X,tgt*1.15);
   if(scaleOn){const b=R.b,hf=b[1]*Math.max(...b[2].map(q=>Math.abs(q[0])));R.bx=R.Rg+hf+Math.max(R.Rg,8)*.1;X=Math.max(X,R.bx+hf*1.1);Y=Math.max(Y,b[1]*1.45)}
-  const s=Math.min((W-padL-padR)/X,(Hh-padT-padB)/Y);
+  const s=Math.max(Math.min(Math.max(W-padL-padR,60)/X,Math.max(Hh-padT-padB,60)/Y),1e-6);
   const t={s,ox:padL,gy:Hh-padB};
+  if(V&&!isFinite(V.s+V.ox+V.gy))V=null;
   if(!V)V={...t};else for(const k in t)V[k]+=(t[k]-V[k])*.18;
 }
 function arrow(x1,y1,x2,y2,c,w=2){
@@ -432,7 +442,7 @@ function calcGo(){
 $('sg').onclick=calcGo;renderK();note(NOTE0);
 $('tabs').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b===e.target));
-  $('tp').hidden=t!=='tp';$('tc').hidden=t!=='tc';$('to').hidden=t!=='to';if(t==='tc')condSync();
+  $('tp').hidden=t!=='tp';$('tc').hidden=t!=='tc';$('to').hidden=t!=='to';$('sub').textContent=t==='to'?'Gravitation · satellites, escape velocity & Kepler’s laws':'Motion under constant gravity';if(t==='tc')condSync();
   mode=t==='to'?'orbit':'play';document.querySelector('main').classList.toggle('orb',mode==='orbit');VO=null;ZO=1;PN[0]=PN[1]=0;spdLbl();
   if(mode==='orbit'){orbRestart();osync()}else{landAt=0;icon()}
   document.querySelector('aside').scrollTop=0};
@@ -501,7 +511,7 @@ const BD=[
 {n:'Neptune',GM:6.8365e15,R:2.4622e7,c:'#4C6FC4',par:'Sun',a:4.49506e12,P:5.2002e9,ph:.8}];
 const BI={};BD.forEach(b=>BI[b.n]=b);
 const on={Earth:true};let LB='Earth';
-const OB={v:7,a:0,h:190,p:0,dir:1,view:'Local',dur:0,tgt:null,tmax:0,pump:null,route:'',via:null,focus:null};
+const OB={v:7,a:0,h:190,p:0,dir:1,view:'Local',dur:0,tgt:null,tmax:0,pump:null,route:'',via:null,focus:null,Q:null,kep2:false};
 BD.forEach(b=>b.ph0=b.ph);
 let ob=null,otm=0,oplay=true,VO=null,spdO=4,ZO=1,OYM=0;const PN=[0,0];
 const fmtT=t=>t<120?t.toFixed(1)+' s':t<7200?(t/60).toFixed(1)+' min':t<172800?(t/3600).toFixed(1)+' h':t<6e7?(t/86400).toFixed(1)+' d':(t/31557600).toFixed(2)+' yr';
@@ -524,9 +534,13 @@ function mkKep(P,t0,rx,ry,wx,wy){
   const E0=2*Math.atan2(Math.sqrt(1-e)*Math.sin(nu/2),Math.sqrt(1+e)*Math.cos(nu/2)),n=Math.sqrt(mu/(a*a*a));
   return{P,mu,a,e,w,sg,t0,M0:E0-e*Math.sin(E0),n,per:2*Math.PI/n,h:Math.abs(hz)};
 }
+function solveE(e,M){
+  const T2=2*Math.PI;M=((M%T2)+T2)%T2;const flip=M>Math.PI,m=flip?T2-M:M;let E=Math.PI;
+  for(let i=0;i<60;i++){const dE=(E-e*Math.sin(E)-m)/(1-e*Math.cos(E));E-=dE;if(Math.abs(dE)<1e-13)break}
+  return flip?T2-E:E;
+}
 function keplerAt(k,t){
-  const T2=2*Math.PI;let M=(k.M0+k.n*(t-k.t0))%T2;if(M<0)M+=T2;let E=M+k.e*Math.sin(M);
-  for(let i=0;i<14;i++)E-=(E-k.e*Math.sin(E)-M)/(1-k.e*Math.cos(E));
+  const E=solveE(k.e,k.M0+k.n*(t-k.t0));
   const nu=2*Math.atan2(Math.sqrt(1+k.e)*Math.sin(E/2),Math.sqrt(1-k.e)*Math.cos(E/2)),r=k.a*(1-k.e*Math.cos(E)),th=k.w+k.sg*nu,c=Math.cos(th),s=Math.sin(th);
   const vr=k.mu/k.h*k.e*Math.sin(nu),vt=k.mu/k.h*(1+k.e*Math.cos(nu));
   return{x:r*c,y:r*s,vx:vr*c-k.sg*vt*s,vy:vr*s+k.sg*vt*c};
@@ -549,7 +563,7 @@ function orbCalc(scan,TmaxOver,opts){
     for(let i=0;i<K;i++){
       const k=mkKep(L,t,r0*uu[0],r0*uu[1],S[i]*hh[0],S[i]*hh[1]);if(!k)return scan?{dmin:Infinity}:null;
       const q=pos(L,t);if(!scan){burns.push(bmk(t,S[i]-prevV,i?'Orbit raise':'Launch',q[0]+r0*uu[0],q[1]+r0*uu[1]));pstart.push(t);pumpK.push(k);
-        for(let j=0;j<90;j++){const tt=t+k.per*j/90,s=keplerAt(k,tt),pL=pos(L,tt),vL=vel(L,tt);rec(tt,pL[0]+s.x,pL[1]+s.y,s.vx+vL[0],s.vy+vL[1])}}
+        for(let j=0;j<140;j++){const Ee=2*Math.PI*j/140,tt=t+(Ee-k.e*Math.sin(Ee))/k.n,s=keplerAt(k,tt),pL=pos(L,tt),vL=vel(L,tt);rec(tt,pL[0]+s.x,pL[1]+s.y,s.vx+vL[0],s.vy+vL[1])}}
       prevV=S[i];t+=k.per;
     }
     if(!scan){const q=pos(L,t);burns.push(bmk(t,sp-prevV,'Departure burn',q[0]+r0*uu[0],q[1]+r0*uu[1]));pstart.push(t)}
@@ -557,13 +571,15 @@ function orbCalc(scan,TmaxOver,opts){
   const tdep=t,p0=pos(L,t),vb=vel(L,t);
   let x=p0[0]+r0*uu[0],y=p0[1]+r0*uu[1],vx=vb[0]+sp*(cc*hh[0]+ss*uu[0]),vy=vb[1]+sp*(cc*hh[1]+ss*uu[1]);
   if(!scan)rec(t,x,y,vx,vy);
-  const acc=(x,y,t)=>{let ax=0,ay=0;for(const b of E){const q=pos(b,t),dx=x-q[0],dy=y-q[1],r2=dx*dx+dy*dy,k=-b.GM/(r2*Math.sqrt(r2));ax+=k*dx;ay+=k*dy}return[ax,ay]};
+  const nE=E.length;let cT=NaN,cP=null,cT2=NaN,cP2=null;
+  const bp=t=>{if(t===cT)return cP;if(t===cT2)return cP2;const P=new Array(nE);for(let i=0;i<nE;i++)P[i]=pos(E[i],t);cT2=cT;cP2=cP;cT=t;cP=P;return P};
+  const acc=(x,y,t)=>{let ax=0,ay=0;const PS=bp(t);for(let i=0;i<nE;i++){const b=E[i],q=PS[i],dx=x-q[0],dy=y-q[1],r2=dx*dx+dy*dy,k=-b.GM/(r2*Math.sqrt(r2));ax+=k*dx;ay+=k*dy}return[ax,ay]};
   const g0=GM/(r0*r0),dcap=.03*(sp+1)/g0+.05,tau=100*dcap,md=E.map(()=>Infinity);
-  let hit=null,ang=0,pa=0,maxr=r0,rng=0,burned=null,pvr=null,tA=0,kep=null,stopped=null;
+  let hit=null,ang=0,pa=0,maxr=r0,rng=0,burned=null,pvr=null,tA=0,kep=null,kep1=null,stopped=null;
   for(let n=0;n<80000&&t<Tmax;n++){
     let bd=0,bk=-1;
-    for(let i=0;i<E.length;i++){const q=pos(E[i],t),d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(k>bk){bk=k;bd=i}}
-    const qd=pos(E[bd],t),vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]);
+    const PS0=bp(t);for(let i=0;i<nE;i++){const q=PS0[i],d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(k>bk){bk=k;bd=i}}
+    const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]);
     const dt=Math.min(.004*rd/Math.max(rs,1),dcap*(1+(t-tdep)/tau),Tmax-t),px=x,py=y,pt=t;
     const a1=acc(x,y,t),x2=x+vx*dt/2,y2=y+vy*dt/2,vx2=vx+a1[0]*dt/2,vy2=vy+a1[1]*dt/2,a2=acc(x2,y2,t+dt/2);
     const x3=x+vx2*dt/2,y3=y+vy2*dt/2,vx3=vx+a2[0]*dt/2,vy3=vy+a2[1]*dt/2,a3=acc(x3,y3,t+dt/2);
@@ -571,7 +587,7 @@ function orbCalc(scan,TmaxOver,opts){
     x+=dt/6*(vx+2*vx2+2*vx3+vx4);y+=dt/6*(vy+2*vy2+2*vy3+vy4);
     vx+=dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]);vy+=dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1]);t+=dt;
     for(let i=0;i<E.length&&!hit;i++){
-      const b=E[i],q=pos(b,t),d=Math.hypot(x-q[0],y-q[1]);
+      const b=E[i],q=bp(t)[i],d=Math.hypot(x-q[0],y-q[1]);
       if(d<b.R*(1-1e-7)){const q0=pos(b,pt),d0=Math.hypot(px-q0[0],py-q0[1]),f0=d0>b.R?(d0-b.R)/(d0-d):0;x=px+(x-px)*f0;y=py+(y-py)*f0;t=pt+dt*f0;hit=b}
       md[i]=Math.min(md[i],d);
     }
@@ -599,7 +615,7 @@ function orbCalc(scan,TmaxOver,opts){
   let burn1=null;
   if(via&&burned&&!hit){
     burn1=burned;burns.push(bmk(burn1.t,burn1.dv,'Planet capture burn',burn1.x,burn1.y));
-    const k1=kep,t1=burn1.t,t2=t1+k1.per;
+    const k1=kep,t1=burn1.t,t2=t1+k1.per;kep1=k1;
     for(let j=1;j<=200;j++){const tt=t1+k1.per*j/200,s_=keplerAt(k1,tt),pv=pos(via,tt),vv=vel(via,tt);rec(tt,pv[0]+s_.x,pv[1]+s_.y,vv[0]+s_.vx,vv[1]+s_.vy)}
     const s_=keplerAt(k1,t2),pv=pos(via,t2),vv=vel(via,t2),xx=pv[0]+s_.x,yy=pv[1]+s_.y,qB=pos(B,t2),vB=vel(B,t2),bx=xx-qB[0],by=yy-qB[1],wx=vv[0]+s_.vx-vB[0],wy=vv[1]+s_.vy-vB[1],rr=Math.hypot(bx,by);
     const rc=capRa(B,rr),ve2=Math.sqrt(B.GM*(2/rr-2/(rr+rc))),sg=(bx*wy-by*wx)>=0?1:-1,nwx=-sg*by/rr*ve2,nwy=sg*bx/rr*ve2;
@@ -632,13 +648,13 @@ function orbCalc(scan,TmaxOver,opts){
     sched.push([c0,ta,4],[ta,burn1?burn1.t:t,8]);if(burn1)sched.push([burn1.t,t,6]);
   }else sched.push([0,Ts,B?Dp+12:20]);
   const dvTot=burns.reduce((s,b)=>s+Math.max(0,b.dv),0);
-  ob={xs,ys,rxs,rys,txs,tys,vrx,vry,ts,Ts,tCap,via,tdep,pumpK,pstart,Tend:Ts+(kep?kep.per:0),kep,hit,range:rng,maxAlt:maxr-Rp,vc,ve,eps,bound,Torb,rp,ra,type,r0,close,xfer:xf,burns,sched,dvTot,K,bbT,bbP,
+  ob={xs,ys,rxs,rys,txs,tys,vrx,vry,ts,Ts,tCap,via,tgtN:B?B.n:null,kep1,t1:burn1?burn1.t:null,Q:OB.Q,tdep,pumpK,pstart,Tend:Ts+(kep?kep.per:0),kep,hit,range:rng,maxAlt:maxr-Rp,vc,ve,eps,bound,Torb,rp,ra,type,r0,close,xfer:xf,burns,sched,dvTot,K,bbT,bbP,
     kepRate:kep?kep.per/10:0,
     bbL:[...mm(rxs),...mm(rys)],bbS:[...mm(xs.concat(pts.map(p=>p[0]))),...mm(ys.concat(pts.map(p=>p[1])))]};
 }
 function atT(t){
   if(t>ob.Ts&&ob.kep){
-    const k=ob.kep,P=k.P,s=keplerAt(k,t),Pp=pos(P,t),vP=vel(P,t),x=Pp[0]+s.x,y=Pp[1]+s.y,qL=pos(BI[LB],t),vL=vel(BI[LB],t),B=OB.tgt?BI[OB.tgt]:null,qB=B?pos(B,t):null;
+    const k=ob.kep,P=k.P,s=keplerAt(k,t),Pp=pos(P,t),vP=vel(P,t),x=Pp[0]+s.x,y=Pp[1]+s.y,qL=pos(BI[LB],t),vL=vel(BI[LB],t),B=ob.tgtN?BI[ob.tgtN]:null,qB=B?pos(B,t):null;
     return{i:ob.ts.length-1,x,y,rx:x-qL[0],ry:y-qL[1],vx:vP[0]+s.vx-vL[0],vy:vP[1]+s.vy-vL[1],tx:qB?x-qB[0]:0,ty:qB?y-qB[1]:0};
   }
   t=Math.min(t,ob.Ts);
@@ -655,26 +671,30 @@ function simRate(t){
   if(t>=s[s.length-1][1])return ob.kep?ob.kepRate:0;
   return(s[0][1]-s[0][0])/s[0][2];
 }
-function aim(set,track,target,w,sc){
-  const f=e=>{set(e);const r=orbCalc(true,OB.tmax,{track});return isFinite(r.dmin)?r.dmin:1e30};
-  let bd=0,bf=Infinity;for(let i=0;i<=16;i++){const d=-w+w*i/8,fv=f(d);if(fv<bf){bf=fv;bd=d}}
-  const gr=.6180339887;let lo=bd-w/8,hi=bd+w/8,x1=hi-gr*(hi-lo),x2=lo+gr*(hi-lo),f1=f(x1),f2=f(x2);
-  for(let i=0;i<22;i++){if(f1<f2){hi=x2;x2=x1;f2=f1;x1=hi-gr*(hi-lo);f1=f(x1)}else{lo=x1;x1=x2;f1=f2;x2=lo+gr*(hi-lo);f2=f(x2)}}
-  const d0=f1<f2?x1:x2;if(f(d0)>target*4)return false;
-  let s=sc,k=0;while(f(d0+s)<target&&k++<14)s*=2;
-  let a=0,b=s;for(let i=0;i<8;i++){const m=(a+b)/2;if(f(d0+m)<target)a=m;else b=m}
-  f(d0+(a+b)/2);return true;
+let curPlan={cancelled:false},planN=0;
+const yld=()=>new Promise(r=>setTimeout(r,0));
+const osim=async(...a)=>{await yld();if(curPlan.cancelled)throw new Error('cancel');if(++planN%5===0&&typeof planProg==='function')planProg(planN);return orbCalc(...a)};
+async function aim(set,track,target,w,sc){for(const m of[1,4,16])if(await aim1(set,track,target,w*m,sc))return true;return false}
+async function aim1(set,track,target,w,sc){
+  const f=async e=>{set(e);const r=await osim(true,OB.tmax,{track});return isFinite(r.dmin)?r.dmin:1e30};
+  let bd=0,bf=Infinity;for(let i=0;i<=16;i++){const d=-w+w*i/8,fv=await f(d);if(fv<bf){bf=fv;bd=d}}
+  const gr=.6180339887;let lo=bd-w/8,hi=bd+w/8,x1=hi-gr*(hi-lo),x2=lo+gr*(hi-lo),f1=await f(x1),f2=await f(x2);
+  for(let i=0;i<22;i++){if(f1<f2){hi=x2;x2=x1;f2=f1;x1=hi-gr*(hi-lo);f1=await f(x1)}else{lo=x1;x1=x2;f1=f2;x2=lo+gr*(hi-lo);f2=await f(x2)}}
+  const d0=f1<f2?x1:x2;if(await f(d0)>target*4)return false;
+  let s=sc,k=0;while(await f(d0+s)<target&&k++<14)s*=2;
+  let a=0,b=s;for(let i=0;i<8;i++){const m=(a+b)/2;if(await f(d0+m)<target)a=m;else b=m}
+  await f(d0+(a+b)/2);return true;
 }
-function planTransfer(){
-  const A=BI[LB],B=BI[OB.tgt],W2=2*Math.PI;BD.forEach(b=>b.ph=b.ph0);OB.pump=null;OB.route='';OB.via=null;
+async function planTransfer(){
+  const A=BI[LB],B=BI[OB.tgt],W2=2*Math.PI;BD.forEach(b=>b.ph=b.ph0);OB.pump=null;OB.route='';OB.via=null;OB.Q=null;
   const rel=B.par===A.n?'moon':A.par===B.n?'parent':(A.par&&A.par===B.par)?'sib':(A.par==='Sun'&&B.par&&B.par!=='Sun')?'hmoon':null;
   if(!rel)return'Launch from a planet, or pick a target in the same system — e.g. Earth to Moon, Saturn or Titan, or Io to Europa';
   const r0=A.R+OB.h*1000,rcap=B.R+defH(B)*1000,nu=vi=>Math.acos(-1/(1+r0*vi*vi/A.GM))/D;
   if(rel==='parent'){
     const mu=B.GM,r1=A.a,at=(r1+rcap)/2,vd=Math.sqrt(mu*(2/r1-1/at)),vi=W2*r1/A.P-vd,p=((270-nu(vi))%360+360)%360;
     OB.v=Math.sqrt(vi*vi+2*A.GM/r0)/1000;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=1.5*Math.PI*Math.sqrt(at**3/mu);
-    if(!aim(e=>{OB.p=((p+e/D)%360+360)%360},B,rcap,.35,.01))return'Could not find a transfer — try a different launch height';
-    OB.route=A.n+' → '+B.n;OB.view='Target';return null;
+    if(!await aim(e=>{OB.p=((p+e/D)%360+360)%360},B,rcap,.35,.01))return'Couldn’t plan this transfer automatically — try another launch body or target';
+    OB.route=A.n+' → '+B.n;OB.Q=B.n;OB.view='Target';return null;
   }
   const Q=rel==='moon'?A:rel==='sib'?BI[A.par]:BI.Sun,PB=rel==='hmoon'?BI[B.par]:B;
   on[Q.n]=true;on[PB.n]=true;on[B.n]=true;
@@ -698,66 +718,68 @@ function planTransfer(){
   if(rel!=='moon'&&mov(A))p=(p+W2*tdep/A.P/D)%360;
   OB.v=(K?Sp[0]:vf)/1000;OB.pump=K?[...Sp.slice(1),vf]:null;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=tdep+1.7*ttrSum;
   const ttrOf=sq=>{let pr=rA,sum=0;sq.forEach(T=>{const am=T.a*(T.a>=pr?1.03:.97),at=(pr+am)/2;sum+=Math.PI*Math.sqrt(at**3/mu);pr=T.a});return sum};
-  const crossing=(T,R_,C,dir)=>{let rp=null,res=null;
+  const crossing=async(T,R_,C,dir)=>{let rp=null,res=null;
     const stop=(t,x,y,vx,vy,pt,px,py)=>{const q=pos(C,t),r=Math.hypot(x-q[0],y-q[1]);
       if(rp!==null&&dir*(rp-R_)>0&&dir*(r-R_)<=0&&r!==rp){const f=(R_-rp)/(r-rp),tc=pt+(t-pt)*f,qc=pos(C,tc);res={t:tc,x:px+(x-px)*f,y:py+(y-py)*f,qx:qc[0],qy:qc[1]};return true}
       rp=r;return false};
-    orbCalc(true,OB.tmax,{stop});return res};
-  const runSeq=()=>{for(let si=0;si<seq.length;si++){
+    await osim(true,OB.tmax,{stop});return res};
+  const runSeq=async()=>{for(let si=0;si<seq.length;si++){
     const T=seq[si],last=si===seq.length-1,dirX=T.a>(si?seq[si-1].a:rA)?-1:1;let cr=null,base=0;
     for(let it=0;it<4;it++){
-      const c2=crossing(T,T.a,Q,dirX);
-      if(!c2){if(it===0)return'Could not find a path to '+T.n+' — try a different launch height';break}
+      const c2=await crossing(T,T.a,Q,dirX);
+      if(!c2){if(it===0)return'Couldn’t plan a route to '+T.n+' automatically — try another launch body or target';break}
       cr=c2;base=Math.atan2(cr.y-cr.qy,cr.x-cr.qx)-(mov(T)?W2/T.P*cr.t:0);T.ph=base+(last&&T===B?3*rcap/T.a:20*T.R/T.a);
     }
     T.ph=base;
     if(!last){
       const nextA=seq[si+1].a*(seq[si+1].a>T.a?1.06:.94),mu0=BI.Sun.GM,sf=SOI(T);
-      const meas=e=>{T.ph=base+e;let inside=false;
-        const r=orbCalc(true,OB.tmax,{stop:(t,x,y)=>{const q=pos(T,t),d=Math.hypot(x-q[0],y-q[1]);if(d<sf)inside=true;return inside&&d>4*sf}});
+      const meas=async e=>{T.ph=base+e;let inside=false;
+        const r=await osim(true,OB.tmax,{stop:(t,x,y)=>{const q=pos(T,t),d=Math.hypot(x-q[0],y-q[1]);if(d<sf)inside=true;return inside&&d>4*sf}});
         if(r.hit||!inside)return 9;
         const qT=pos(T,r.t),dT=Math.hypot(r.x-qT[0],r.y-qT[1]),rr=Math.hypot(r.x,r.y),en=(r.vx*r.vx+r.vy*r.vy)/2-mu0/rr-T.GM/dT;if(en>=0)return 9;
         const a_=-mu0/(2*en),h=Math.abs(r.x*r.vy-r.y*r.vx),e_=Math.sqrt(Math.max(0,1+2*en*h*h/(mu0*mu0)));
         return Math.abs(a_*(nextA<T.a?1-e_:1+e_)-nextA)/nextA};
       const cand=[];for(const sg of[-1,1])for(const b of[1.5,2,3,4.5,7,10,15,25,40])cand.push(sg*b*T.R/T.a);cand.sort((a,b)=>a-b);
-      const fv=cand.map(meas);let bi=0;fv.forEach((v,i)=>{if(v<fv[bi])bi=i});
-      const gr=.6180339887;let lo=cand[Math.max(0,bi-1)],hi=cand[Math.min(cand.length-1,bi+1)],x1=hi-gr*(hi-lo),x2=lo+gr*(hi-lo),f1=meas(x1),f2=meas(x2);
-      for(let i=0;i<14;i++){if(f1<f2){hi=x2;x2=x1;f2=f1;x1=hi-gr*(hi-lo);f1=meas(x1)}else{lo=x1;x1=x2;f1=f2;x2=lo+gr*(hi-lo);f2=meas(x2)}}
+      const fv=[];for(const c_ of cand)fv.push(await meas(c_));let bi=0;fv.forEach((v,i)=>{if(v<fv[bi])bi=i});
+      const gr=.6180339887;let lo=cand[Math.max(0,bi-1)],hi=cand[Math.min(cand.length-1,bi+1)],x1=hi-gr*(hi-lo),x2=lo+gr*(hi-lo),f1=await meas(x1),f2=await meas(x2);
+      for(let i=0;i<14;i++){if(f1<f2){hi=x2;x2=x1;f2=f1;x1=hi-gr*(hi-lo);f1=await meas(x1)}else{lo=x1;x1=x2;f1=f2;x2=lo+gr*(hi-lo);f2=await meas(x2)}}
       const eb=f1<f2?x1:x2;T.ph=base+(Math.min(f1,f2)<fv[bi]?eb:cand[bi]);
     }else if(rel==='hmoon'){
       OB.via=PB.n;const rp1=B.a-rcap;
-      if(!aim(e=>{T.ph=base+e},T,rp1,60*T.R/T.a,rp1/T.a))return'Could not line up the approach to '+T.n;
-      const r1=orbCalc(true,OB.tmax,{cap1:true,track:PB});if(!r1||!r1.kep)return'Could not capture at '+T.n;
+      if(!await aim(e=>{T.ph=base+e},T,rp1,60*T.R/T.a,rp1/T.a))return'Could not line up the approach to '+T.n;
+      const r1=await osim(true,OB.tmax,{cap1:true,track:PB});if(!r1||!r1.kep)return'Could not capture at '+T.n;
       B.ph=Math.atan2(r1.rel[1],r1.rel[0])-(mov(B)?W2/B.P*(r1.t1+r1.kep.per):0);
-    }else if(!aim(e=>{T.ph=base+e},B,rcap,60*T.R/T.a,rcap/T.a))return'Could not find a transfer — try a different launch height';
+    }else if(!await aim(e=>{T.ph=base+e},B,rcap,60*T.R/T.a,rcap/T.a))return'Couldn’t plan this transfer automatically — try another launch body or target';
   }return null};
   let msg=null;
-  for(const sq of(alts||[seq])){seq=sq;BD.forEach(b=>b.ph=b.ph0);OB.tmax=tdep+1.7*ttrOf(sq);msg=runSeq();if(!msg)break}
+  for(const sq of(alts||[seq])){seq=sq;BD.forEach(b=>b.ph=b.ph0);OB.tmax=tdep+1.7*ttrOf(sq);msg=await runSeq();if(!msg)break}
   if(msg)return msg;
-  OB.route=A.n+' → '+seq.map(b=>b.n+(b===PB?'':' (gravity assist)')).join(' → ')+(rel==='hmoon'?' → '+B.n:'')+(K?' · '+K+' orbit-raising burns at perigee':'');
+  OB.Q=Q.n;OB.route=A.n+' → '+seq.map(b=>b.n+(b===PB?'':' (gravity assist)')).join(' → ')+(rel==='hmoon'?' → '+B.n:'')+(K?' · '+K+' orbit-raising burns at perigee':'');
   OB.view=rel==='moon'?'Local':'System';return null;
 }
 const OC=[['v','Launch speed','km/s',0,15,.01],['a','Launch angle','°',0,90,1],['h','Launch height','km',0,2000,1],['p','Launch point','°',0,360,1]];
-const lim=()=>{const L=BI[LB];return{v:Math.ceil(Math.sqrt(2*L.GM/L.R)*1.6/100)/10,h:Math.max(100,Math.round(L.R/1000*.4/50)*50)}};
+const lim=()=>{const L=BI[LB];return{v:Math.ceil(Math.sqrt(2*L.GM/L.R)*1.6/100)/10,h:Math.max(100,Math.round(L.R/1000*6.5/50)*50)}};
 const vcOf=()=>{const L=BI[LB];return Math.sqrt(L.GM/(L.R+OB.h*1000))};
 const defH=b=>Math.max(10,Math.round(b.R/1000*.03/10)*10);
 const newLB=()=>{OB.pump=null;OB.h=defH(BI[LB]);OB.a=0;OB.v=+(vcOf()/1000).toFixed(3)};
 function oresults(){
-  const g=v=>f(v/1000,2),L=BI[LB],X=ob.xfer;let it;
-  if(X)it=[['Launch speed',g(OB.v*1000),'km/s'],['Transfer time',fmtT(X.t),''],['Result',ob.type,'',1],['Total Δv',g(ob.dvTot),'km/s'],['Capture burn',f(X.dv,0),'m/s'],['Capture orbit',fmtT(X.per),'period']];
+  const g=v=>f(v/1000,2),L=BI[LB],X=ob.xfer,k=ob.kep,GM=L.GM,r0=ob.r0,hrs=v=>fmtT(v);let it;
+  const jee=[['Orbital velocity v₀',g(ob.vc),'km/s','','v₀ = √(GM/r)'],['Escape velocity vₑ',g(ob.ve),'km/s','','vₑ = √2 · v₀'],['g at this height',(GM/(r0*r0)).toFixed(2),'m/s²','','g′ = GM/r²'],['Time period (circular)',hrs(2*Math.PI*Math.sqrt(r0*r0*r0/GM)),'','','T = 2π√(r³/GM)']];
+  const orb=k?[['Time period T',hrs(k.per),'','','T = 2π√(a³/GM)'],['Semi-major axis a',f(k.a/1000,0),'km','','a = (rₚ + rₐ)/2'],['Eccentricity e',k.e.toFixed(3),'','','0 = circle, 0<e<1 ellipse'],['Total energy per kg',(-k.mu/(2*k.a)/1e6).toFixed(2),'MJ/kg','','E = −GMm/2a (negative: bound)'],['T² / a³',(k.per*k.per/(k.a*k.a*k.a)).toExponential(2),'s²/m³','','= 4π²/GM — same for every orbit']]:[];
+  if(X)it=[['Launch speed',g(OB.v*1000),'km/s'],['Transfer time',fmtT(X.t),''],['Result',ob.type,'',1],['Total Δv',g(ob.dvTot),'km/s'],['Capture burn',f(X.dv,0),'m/s'],...orb];
   else{
-    it=[['Circular speed',g(ob.vc),'km/s'],['Escape speed',g(ob.ve),'km/s'],['Result',ob.type,'',1]];
+    it=[['Result',ob.type,'',1],...jee];
     if(ob.hit&&ob.hit===L)it.push(['Range',f(ob.range/1000,0),'km'],['Flight time',fmtT(ob.Ts),''],['Max altitude',f(ob.maxAlt/1000,0),'km']);
     else if(ob.hit)it.push(['Flight time',fmtT(ob.Ts),''],['Max distance',f((ob.maxAlt+L.R)/1000,0),'km']);
-    else if(ob.kep)it.push(['Period',fmtT(ob.kep.per),''],['Periapsis alt.',f((ob.kep.a*(1-ob.kep.e)-L.R)/1000,0),'km'],['Apoapsis alt.',f((ob.kep.a*(1+ob.kep.e)-L.R)/1000,0),'km']);
+    else if(k)it.push(['Perigee altitude',f((k.a*(1-k.e)-L.R)/1000,0),'km'],['Apogee altitude',f((k.a*(1+k.e)-L.R)/1000,0),'km'],...orb);
     else it.push(['Speed at infinity',g(Math.sqrt(Math.max(2*ob.eps,0))),'km/s'],['Simulated',fmtT(ob.Ts),'']);
   }
   if(ob.close)it.push(['Closest to '+ob.close.n,f(ob.close.alt/1000,0),'km']);
-  $('ores').innerHTML=it.map(([l,v,u,w])=>'<div class="'+(w?'w2 fd':'')+'"><small>'+l+'</small><b'+(w?' style="font-size:19px"':'')+'>'+v+'</b><i>'+u+'</i></div>').join('');
+  $('ores').innerHTML=it.map(([l,v,u,w,fm])=>'<div class="'+(w?'w2 fd':'')+'"><small>'+l+'</small><b'+(w?' style="font-size:19px"':'')+'>'+v+'</b><i>'+u+'</i>'+(fm?'<em>'+fm+'</em>':'')+'</div>').join('');
 }
 function orbRestart(){orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;capAt=0;bnIdx=0;oresults();icon()}
 function osync(){
-  const m=lim();
+  const m=lim();const ge=$('ogeo');if(ge)ge.hidden=LB!=='Earth';
   OC.forEach(([k,,,mn,mx])=>{const n=$('on'+k),r=$('or'+k),M=k==='v'?m.v:k==='h'?m.h:mx;
     r.max=M;if(k==='h')r.step=M>5000?10:1;if(document.activeElement!==n)n.value=+OB[k].toFixed(2);r.value=OB[k];r.style.setProperty('--p',(OB[k]-mn)/(M-mn)*100+'%')});
   document.querySelectorAll('#odu button').forEach(b=>b.classList.toggle('on',+b.dataset.d===OB.dur));
@@ -770,7 +792,7 @@ OC.forEach(([k,l,u,mn,mx,st])=>{
   d.innerHTML='<div class="top"><span>'+l+'</span><label class="num"><input inputmode="decimal" id="on'+k+'"><span>'+u+'</span></label></div><input type="range" id="or'+k+'" min="'+mn+'" max="'+mx+'" step="'+st+'">';
   $('octl').appendChild(d);
   const n=$('on'+k),r=$('or'+k);
-  const set=v=>{if(isNaN(v))return;const m=lim();OB[k]=Math.min(Math.max(v,mn),k==='v'?m.v:k==='h'?m.h:mx);if(k==='h'&&OB.tgt){replan();osync();return}if(k!=='h')OB.pump=null;orbRestart();osync()};
+  const set=v=>{if(isNaN(v))return;const m=lim();OB[k]=Math.min(Math.max(v,mn),k==='v'?m.v:k==='h'?m.h:mx);if(k==='h'&&OB.tgt){clearTimeout(window._ht);window._ht=setTimeout(replan,400);osync();return}if(k!=='h')clearTgt();OB.pump=null;orbRestartSoon();osync()};
   n.oninput=()=>set(parseFloat(n.value));n.onblur=()=>{n.value=+OB[k].toFixed(2)};r.oninput=()=>set(+r.value);
 });
 function togBody(n){
@@ -802,128 +824,189 @@ function buildLaunch(){
 }
 [['Falls back',.8],['Circular orbit',1],['Elliptical',1.25],['Escape',1.5]].forEach(([n,m])=>{
   const b=document.createElement('button');b.textContent=n;
-  b.onclick=()=>{if(OB.h<=0)OB.h=defH(BI[LB]);OB.a=0;OB.v=Math.min(lim().v,+(vcOf()*m/1000).toFixed(2));orbRestart();osync()};$('opr').appendChild(b)});
+  b.onclick=()=>{clearTgt();OB.pump=null;if(OB.h<=0)OB.h=defH(BI[LB]);OB.a=0;OB.v=Math.min(lim().v,+(vcOf()*m/1000).toFixed(2));orbRestart();osync()};$('opr').appendChild(b)});
+{const b=document.createElement('button');b.id='ogeo';b.textContent='Geostationary';b.hidden=true;
+  b.onclick=()=>{clearTgt();OB.pump=null;OB.a=0;OB.h=35786;OB.v=+(vcOf()/1000).toFixed(3);orbRestart();osync()};$('opr').appendChild(b)}
 [['Local'],['Target'],['System'],['Follow']].forEach(([n])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{OB.view=n;VO=null;ZO=1;PN[0]=PN[1]=0;osync()};$('ovw').appendChild(b)});
 [['Auto',0],['1 day',86400],['30 days',2.592e6],['1 year',3.156e7],['10 years',3.156e8]].forEach(([n,d])=>{
-  const b=document.createElement('button');b.textContent=n;b.dataset.d=d;b.onclick=()=>{OB.dur=d;orbRestart();osync()};$('odu').appendChild(b)});
-[['Prograde',1],['Retrograde',-1]].forEach(([n,d])=>{const b=document.createElement('button');b.textContent=n;b.dataset.d=d;b.onclick=()=>{OB.dir=d;orbRestart();osync()};$('odr').appendChild(b)});
+  const b=document.createElement('button');b.textContent=n;b.dataset.d=d;b.onclick=()=>{OB.dur=d;orbRestartBusy();osync()};$('odu').appendChild(b)});
+[['Prograde',1],['Retrograde',-1]].forEach(([n,d])=>{const b=document.createElement('button');b.textContent=n;b.dataset.d=d;b.onclick=()=>{clearTgt();OB.pump=null;OB.dir=d;orbRestart();osync()};$('odr').appendChild(b)});
+function clearTgt(){if(!OB.tgt)return;cancelPlan();OB.tgt=null;OB.Q=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0);if(OB.view==='Target')OB.view='Local';buildTarget()}
 function buildTarget(){
   const c=$('otg');c.innerHTML='';
   const mk=(n,on_,fn)=>{const e=document.createElement('button');e.textContent=n;e.className=on_?'on':'';e.onclick=fn;c.appendChild(e)};
-  mk('None',!OB.tgt,()=>{OB.tgt=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0);OB.view=OB.view==='Target'?'Local':OB.view;buildTarget();orbRestart();osync()});
+  mk('None',!OB.tgt,()=>{cancelPlan();OB.tgt=null;OB.Q=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0);OB.view=OB.view==='Target'?'Local':OB.view;buildTarget();orbRestart();osync()});
   BD.filter(b=>on[b.n]&&b.n!==LB&&b.n!=='Sun').forEach(b=>mk(b.n,b.n===OB.tgt,()=>{OB.tgt=b.n;replan()}));
   if(OB.tgt)mk('Re-aim',false,()=>replan());
   $('otn').textContent=OB.tgt?'Route: '+OB.route+'. Burns are kept small: orbit-raising at perigee, gravity assists where they help, and an elliptical (not circular) capture.':'Optional. Pick a second body and the launch values are set automatically so the satellite ends up orbiting it.';
 }
-function replan(){
-  toast('Planning transfer…');
-  setTimeout(()=>{const msg=planTransfer();
-    if(msg){toast(msg);OB.tgt=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0)}
-    buildBodies();buildLaunch();buildTarget();orbRestart();osync()},60);
+let planSeq=0,planRun=Promise.resolve();
+function busy(on_,txt){const e=$('busy');if(!e)return;e.hidden=!on_;if(txt)$('busyt').textContent=txt}
+function planProg(n){const pc=Math.min(97,Math.round(100*(1-Math.exp(-n/70))));$('busyt').textContent='Running more calculations… '+pc+'%'}
+function cancelPlan(){planSeq++;curPlan.cancelled=true;busy(false)}
+async function replan(){
+  const id=++planSeq;curPlan.cancelled=true;busy(true,'Running calculations…');
+  try{await planRun}catch(e){}
+  if(id!==planSeq)return;
+  const my=curPlan={cancelled:false};planN=0;
+  planRun=(async()=>{
+    await yld();let msg=null;
+    try{msg=await planTransfer()}catch(e){if(my.cancelled)return;msg='Planning stopped unexpectedly'}
+    if(my.cancelled)return;
+    if(msg){toast(msg);OB.tgt=null;OB.via=null;OB.pump=null;OB.Q=null;BD.forEach(b=>b.ph=b.ph0)}
+    buildBodies();buildLaunch();buildTarget();
+    await yld();orbRestart();osync();busy(false);
+  })();
 }
+let rsT=0;
+function orbRestartSoon(){clearTimeout(rsT);rsT=setTimeout(orbRestart,90)}
+function orbRestartBusy(){busy(true,'Running calculations…');setTimeout(()=>{try{orbRestart()}finally{busy(false)}},40)}
 function afterChange(){
   if(OB.tgt&&(!on[OB.tgt]||OB.tgt===LB)){OB.tgt=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0)}
-  buildTarget();if(OB.tgt)replan();else{orbRestart();osync()}
+  buildTarget();if(OB.tgt)replan();else{orbRestartBusy();osync()}
 }
 buildBodies();buildLaunch();buildTarget();osync();
 let rateCur=0,capSeen=false,orbBlend=0,capAt=0,lastDraw=0,bnIdx=0;
+const CM=2000;
+function clipSeg(x0,y0,x1,y1){
+  let t0=0,t1=1;const dx=x1-x0,dy=y1-y0,p=[-dx,dx,-dy,dy],q=[x0+CM,W+CM-x0,y0+CM,Hh+CM-y0];
+  for(let i=0;i<4;i++){if(p[i]===0){if(q[i]<0)return null}else{const r=q[i]/p[i];if(p[i]<0){if(r>t1)return null;if(r>t0)t0=r}else{if(r<t0)return null;if(r<t1)t1=r}}}
+  return[x0+t0*dx,y0+t0*dy,x0+t1*dx,y0+t1*dy,t0,t1];
+}
+function mkPoly(){
+  let px=0,py=0,has=false,conn=false;
+  return{add(x,y){
+    if(!isFinite(x+y)){has=false;return}
+    if(!has){px=x;py=y;has=true;conn=false;return}
+    const s=clipSeg(px,py,x,y);
+    if(s){if(!conn||s[4]>0)ctx.moveTo(s[0],s[1]);ctx.lineTo(s[2],s[3]);conn=s[5]===1}else conn=false;
+    px=x;py=y;
+  }};
+}
+function circPts(cx,cy,r,fill){
+  if(!isFinite(cx+cy+r)||r<=0)return;
+  const vx=W/2,vy=Hh/2,d=Math.hypot(cx-vx,cy-vy),hd=Math.hypot(W,Hh)/2+CM;
+  if(r<2500||d<1){ctx.moveTo(cx+r,cy);ctx.arc(cx,cy,r,0,6.283185307);return}
+  if(d>r+hd)return;
+  if(d+hd<r){if(fill)ctx.rect(-CM,-CM,W+2*CM,Hh+2*CM);return}
+  const th0=Math.atan2(vy-cy,vx-cx),ph=Math.acos(Math.max(-1,Math.min(1,(r*r+d*d-hd*hd)/(2*r*d)))),n=Math.min(500,Math.max(2,Math.ceil(2*ph/Math.sqrt(2.4/r))));
+  for(let i=0;i<=n;i++){const a=th0-ph+2*ph*i/n,x=cx+r*Math.cos(a),y=cy+r*Math.sin(a);i?ctx.lineTo(x,y):ctx.moveTo(x,y)}
+  if(fill){const L=Math.min(d,5e4);ctx.lineTo(vx+(cx-vx)/d*L,vy+(cy-vy)/d*L);ctx.closePath()}
+}
+const ellPt=(k,E)=>{const b=k.a*Math.sqrt(1-k.e*k.e),xr=k.a*(Math.cos(E)-k.e),yr=b*Math.sin(E),c=Math.cos(k.w),s=Math.sin(k.w);return[xr*c-yr*s,xr*s+yr*c]};
 function drawOrbit(){
-  if(!ob)return;aimH=null;aimOn=false;
+  if(!ob||W<20||Hh<20)return;aimH=null;aimOn=false;
+  if(VO&&!(isFinite(VO.s)&&VO.s>0&&isFinite(VO.ox+VO.oy+VO.cx+VO.cy)))VO=null;
   const nowT=performance.now(),dtF=Math.min(.1,(nowT-lastDraw)/1000||.016);lastDraw=nowT;
-  const L=BI[LB],B=OB.tgt?BI[OB.tgt]:null,vw=OB.view==='Target'&&!B?'Local':OB.view,sys=vw==='System',tg=vw==='Target',flw=vw==='Follow',foc=vw==='Focus',rf=flw||foc;
-  const padT=W<500?72:78,padB=W<500?84:96,ac=css('--accent'),XF=ob.xfer,q=atT(otm),E=BD.filter(b=>on[b.n]),kp=ob.kep,vL=vel(L,otm),mD=Math.min(W-60,Hh-padT-padB);
-  let dom=L,dd=1,Fc=null,vrel=0;
+  const L=BI[LB],B=ob.tgtN?BI[ob.tgtN]:null,vw=OB.view==='Target'&&!B?'Local':OB.view,sys=vw==='System',tg=vw==='Target',flw=vw==='Follow',foc=vw==='Focus',rf=flw||foc;
+  const padT=W<500?72:78,padB=W<500?84:96,ac=css('--accent'),XF=ob.xfer,q=atT(otm),E=BD.filter(b=>on[b.n]),kp=ob.kep,vL=vel(L,otm);
+  const aH=Math.max(Hh-padT-padB,80),aW=Math.max(W-80,80),mD=Math.max(Math.min(W-60,aH),80),n=ob.xs.length,t1=ob.t1;
+  const viaStage=!!(XF&&t1!=null&&otm>=t1&&otm<XF.t),post=XF?otm>=XF.t:!!(kp&&otm>ob.Ts),pre=!viaStage&&!post;
+  const capT=XF?(t1!=null?t1:XF.t):null,capd=capT!=null&&otm>=capT,kcur=post?kp:viaStage?ob.kep1:null;
+  let dom=L,dd=1,vrel=0;
   if(foc)dom=OB.focus&&on[OB.focus]?BI[OB.focus]:(B||L);
   else if(flw){
-    if(XF&&otm>=ob.tCap)dom=(ob.via&&otm<XF.t)?ob.via:B;
+    if(XF&&otm>=ob.tdep)dom=(ob.via&&otm<XF.t)?ob.via:B;
     else{let bk=-1;for(const b of E){const p=pos(b,otm),d=Math.max(Math.hypot(q.x-p[0],q.y-p[1]),1),k=b.GM/(d*d);if(k>bk){bk=k;dom=b}}}
   }
-  if(rf){Fc=pos(dom,otm);dd=Math.max(Math.hypot(q.x-Fc[0],q.y-Fc[1]),1);const vD=vel(dom,otm);vrel=Math.hypot(q.vx+vL[0]-vD[0],q.vy+vL[1]-vD[1])}
+  if(rf){const Dp=pos(dom,otm),vD=vel(dom,otm);dd=Math.max(Math.hypot(q.x-Dp[0],q.y-Dp[1]),1);vrel=Math.hypot(q.vx+vL[0]-vD[0],q.vy+vL[1]-vD[1])}
   const pumping=flw&&ob.K>0&&otm<ob.tdep;let pk=null,pidx=0;
   if(pumping){for(let j=0;j<ob.K;j++)if(otm>=ob.pstart[j])pidx=j;pk=ob.pumpK[pidx]}
-  const Cb=tg?B:rf?dom:L,satRel=rf?[q.x-Fc[0],q.y-Fc[1]]:null;
+  let fb=L;
+  if(foc)fb=dom;
+  else if(flw){fb=pumping?L:viaStage?ob.via:(post&&XF)?B:(post&&kp)?kp.P:((B&&ob.Q&&BI[ob.Q])?BI[ob.Q]:L)}
+  else if(tg)fb=B;
+  const Fc=sys?[0,0]:pos(fb,otm),F=p=>[p[0]-Fc[0],p[1]-Fc[1]],satF=F([q.x,q.y]),Cb=tg?B:rf?dom:L;
   let tx0=0,ty0=0,st,tcx=0,tcy=0,satLock=false;
-  if(pumping){tx0=-pk.a*pk.e*Math.cos(pk.w);ty0=-pk.a*pk.e*Math.sin(pk.w);st=.5*mD/(pk.a*1.12)}
+  const ecOf=k=>k.P===fb?[-k.a*k.e*Math.cos(k.w),-k.a*k.e*Math.sin(k.w)]:[0,0];
+  if(pumping){const ec=ecOf(pk);tx0=ec[0];ty0=ec[1];st=.5*mD/(pk.a*1.12)}
   else if(foc){const kids=E.filter(b=>b.par===dom.n);st=.42*mD/(kids.length?Math.max(...kids.map(b=>b.a))*1.15:dom.R*30)}
   else if(flw){
     const sD=.4*mD/Math.max(dd*1.15,dom.R*1.3),sC=Math.min(sD,Math.max(150/(Math.max(vrel,1)*Math.max(rateCur,1e-6)),22/dom.R));
-    const post=kp&&kp.P===dom&&otm>=ob.Ts;orbBlend+=((post&&(capAt===0||nowT-capAt>2500)?1:0)-orbBlend)*Math.min(1,dtF*3);
-    const ec=post?[-kp.a*kp.e*Math.cos(kp.w),-kp.a*kp.e*Math.sin(kp.w)]:[0,0],ub=orbBlend;
-    tx0=(1-ub)*satRel[0]+ub*ec[0];ty0=(1-ub)*satRel[1]+ub*ec[1];satLock=ub<.5;
-    st=post||ub>.001?Math.exp((1-ub)*Math.log(sC)+ub*Math.log(.5*mD/(Math.max(kp?kp.a:dom.R,1)*1.12))):sC;
+    const orb=kcur&&kcur.P===fb;orbBlend+=((orb&&(capAt===0||nowT-capAt>2500)?1:0)-orbBlend)*Math.min(1,dtF*3);
+    const ec=orb?ecOf(kcur):[0,0],ub=orbBlend;
+    tx0=(1-ub)*satF[0]+ub*ec[0];ty0=(1-ub)*satF[1]+ub*ec[1];satLock=ub<.5;
+    st=orb||ub>.001?Math.exp((1-ub)*Math.log(sC)+ub*Math.log(.5*mD/(Math.max(orb?kcur.a:dom.R,1)*1.12))):sC;
   }else{
     const bb=sys?ob.bbS:tg?(XF&&otm>=XF.t?ob.bbP:ob.bbT):ob.bbL,[bx0,bx1,by0,by1]=bb,mn=sys?1e6:.004*Cb.R,bw=Math.max(bx1-bx0,mn),bh=Math.max(by1-by0,mn);
-    st=Math.min((W-80)/bw,(Hh-padT-padB)/bh);tcx=(bx0+bx1)/2;tcy=(by0+by1)/2;
+    st=Math.min(aW/bw,aH/bh);tcx=(bx0+bx1)/2;tcy=(by0+by1)/2;
   }
-  st*=ZO;
+  st*=ZO;if(!(isFinite(st)&&st>0))st=VO&&VO.s>0?VO.s:1e-9;
   if(!VO)VO={s:st,cx:tcx,cy:tcy,ox:tx0,oy:ty0};
   else{
     const rt=st/VO.s,k=1-Math.exp(-(rt>1?(rf?.8:2.5):(rf?3:2.5))*dtF);VO.s*=Math.pow(rt,k);
     const kc=1-Math.exp(-(satLock?7:1.4)*dtF);VO.ox+=(tx0-VO.ox)*kc;VO.oy+=(ty0-VO.oy)*kc;
     const k3=1-Math.exp(-3*dtF);VO.cx+=(tcx-VO.cx)*k3;VO.cy+=(tcy-VO.cy)*k3;
   }
-  const s=VO.s,ym=padT+(Hh-padT-padB)/2,pn=flw?[0,0]:PN;OYM=ym;
+  const s=VO.s,ym=padT+aH/2,pn=flw?[0,0]:PN;OYM=ym;
   const X=x=>W/2+pn[0]+(x-VO.ox-VO.cx)*s,Y=y=>ym+pn[1]-(y-VO.oy-VO.cy)*s;
-  const Lp=pos(L,otm),Tp=B?pos(B,otm):null,F=p=>sys?p:rf?[p[0]-Fc[0],p[1]-Fc[1]]:tg?[p[0]-Tp[0],p[1]-Tp[1]]:[p[0]-Lp[0],p[1]-Lp[1]];
-  const PX=sys?ob.xs:tg?ob.txs:ob.rxs,PY=sys?ob.ys:tg?ob.tys:ob.rys,n=ob.xs.length,bp=sys?[q.x,q.y]:rf?satRel:tg?[q.tx,q.ty]:[q.rx,q.ry];
-  const mp=(x,y,t,a,b,c,d)=>sys?[x,y]:rf?[x-pos(dom,t)[0],y-pos(dom,t)[1]]:tg?[c,d]:[a,b];
+  const pf=i=>{if(sys)return[ob.xs[i],ob.ys[i]];if(fb===L)return[ob.rxs[i],ob.rys[i]];if(B&&fb===B)return[ob.txs[i],ob.tys[i]];const pd=pos(fb,ob.ts[i]);return[ob.xs[i]-pd[0],ob.ys[i]-pd[1]]};
+  const mpf=(x,y,t)=>{if(sys)return[x,y];const pd=pos(fb,t);return[x-pd[0],y-pd[1]]};
+  const idxT=tt=>{let lo=0,hi=n-1;while(hi-lo>1){const m=(lo+hi)>>1;if(ob.ts[m]<=tt)lo=m;else hi=m}return lo};
+  const vis=(x,y)=>Math.abs(x)<1e5&&Math.abs(y)<1e5;
   ctx.clearRect(0,0,W,Hh);ctx.lineCap=ctx.lineJoin='round';
-  E.forEach(b=>{if(!mov(b))return;const c=F(pos(BI[b.par],otm)),rr=b.a*s;if(rr>4&&rr<5e5){ctx.setLineDash([2,6]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.4;ctx.lineWidth=1;ctx.beginPath();ctx.arc(X(c[0]),Y(c[1]),rr,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}});
+  E.forEach(b=>{if(!mov(b))return;const c=F(pos(BI[b.par],otm)),rr=b.a*s;if(rr>4){ctx.setLineDash([2,6]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.4;ctx.lineWidth=1;ctx.beginPath();circPts(X(c[0]),Y(c[1]),rr,false);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}});
   const ev=XF?{b:B,t:XF.t}:(ob.hit&&ob.hit!==L?{b:ob.hit,t:ob.Ts}:null);
-  if(ev&&!tg&&otm<ev.t&&!(rf&&dom===ev.b)){
-    const w0=pos(ev.b,ev.t),gp=sys||rf?F(w0):[w0[0]-pos(L,ev.t)[0],w0[1]-pos(L,ev.t)[1]],gx=X(gp[0]),gy=Y(gp[1]),gr=Math.max(ev.b.R*s,5);
-    ctx.setLineDash([4,4]);ctx.strokeStyle=ev.b.c;ctx.lineWidth=2;ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(gx,gy,gr,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
-    label(ev.b.n+' at arrival',gx,gy-gr-12);
+  if(ev&&!tg&&otm<ev.t&&ev.b!==fb){
+    const w0=pos(ev.b,ev.t),pf0=sys?[0,0]:pos(fb,ev.t),gx=X(w0[0]-pf0[0]),gy=Y(w0[1]-pf0[1]),gr=Math.max(ev.b.R*s,5);
+    if(vis(gx,gy)&&gr<2500){ctx.setLineDash([4,4]);ctx.strokeStyle=ev.b.c;ctx.lineWidth=2;ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(gx,gy,gr,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;label(ev.b.n+' at arrival',gx,gy-gr-12)}
   }
   [...E].sort((a,b)=>b.R-a.R).forEach(b=>{
     const c=F(pos(b,otm)),px=X(c[0]),py=Y(c[1]),rp=b.R*s,rd=Math.max(rp,3);
-    if(b===Cb&&!sys){ctx.beginPath();ctx.arc(px,py,rp+Math.min(100e3*s,40),0,7);ctx.fillStyle=b.c;ctx.globalAlpha=.18;ctx.fill();ctx.globalAlpha=1}
-    ctx.beginPath();ctx.arc(px,py,rd,0,7);ctx.fillStyle=b.c;ctx.fill();
-    if(rp>8){ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.14)';ctx.stroke()}
-    if(rp<28||foc)label(b.n,px,py-rd-11);
+    if(b===Cb&&!sys){ctx.beginPath();circPts(px,py,rp+Math.min(100e3*s,40),true);ctx.fillStyle=b.c;ctx.globalAlpha=.18;ctx.fill();ctx.globalAlpha=1}
+    ctx.beginPath();circPts(px,py,rd,true);ctx.fillStyle=b.c;ctx.fill();
+    if(rp>8){ctx.beginPath();circPts(px,py,rd,false);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.14)';ctx.stroke()}
+    if((rp<28||foc)&&vis(px,py))label(b.n,px,py-Math.min(rd,2000)-11);
   });
-  if(vw==='Local'&&ob.r0*s<4e5){ctx.setLineDash([3,7]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.5;ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(X(0),Y(0),ob.r0*s,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
-  const rel=tt=>{const z=atT(Math.max(0,tt)),pd=pos(dom,tt);return[z.x-pd[0],z.y-pd[1]]};
-  const ell=(k,al)=>{ctx.globalAlpha=al;ctx.beginPath();for(let i=0;i<=120;i++){const z=keplerAt(k,k.t0+k.per*i/120);i?ctx.lineTo(X(z.x),Y(z.y)):ctx.moveTo(X(z.x),Y(z.y))}ctx.stroke()};
-  if(rf){
-    ctx.lineWidth=2;ctx.strokeStyle=css('--axis');ctx.setLineDash([2,6]);
-    if(pumping){
-      ell(pk,.8);if(ob.pumpK[pidx+1])ell(ob.pumpK[pidx+1],.4);
-      ctx.setLineDash([]);ctx.globalAlpha=1;ctx.lineWidth=3;ctx.strokeStyle=ac;ctx.beginPath();
-      for(let i=0;i<=q.i;i++)i?ctx.lineTo(X(ob.rxs[i]),Y(ob.rys[i])):ctx.moveTo(X(ob.rxs[0]),Y(ob.rys[0]));
-      ctx.lineTo(X(satRel[0]),Y(satRel[1]));ctx.stroke();
-    }else{
-      const span=foc?Math.max(otm,60):Math.min(Math.max(3*dd/Math.max(vrel,1),60),Math.max(otm,60)),fut=foc?Math.max(ob.Ts-otm,0):span;
-      ctx.globalAlpha=.75;ctx.beginPath();ctx.moveTo(X(satRel[0]),Y(satRel[1]));
-      for(let j=1;j<=160;j++){const tt=otm+fut*j/160;if(tt>ob.Ts&&!kp)break;const r=rel(tt);ctx.lineTo(X(r[0]),Y(r[1]))}
-      ctx.stroke();if(kp&&kp.P===dom)ell(kp,.75);
-      ctx.setLineDash([]);ctx.globalAlpha=1;ctx.lineWidth=3;ctx.strokeStyle=ac;ctx.beginPath();
-      for(let j=0;j<=160;j++){const r=rel(otm-span+span*j/160);j?ctx.lineTo(X(r[0]),Y(r[1])):ctx.moveTo(X(r[0]),Y(r[1]))}
-      ctx.stroke();
+  if(vw==='Local'&&ob.r0*s>4){ctx.setLineDash([3,7]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.5;ctx.lineWidth=1.2;ctx.beginPath();circPts(X(0),Y(0),ob.r0*s,false);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
+  const ellK=(k,tref,al)=>{const Pp=pos(k.P,tref),Rf=sys?[0,0]:pos(fb,tref),P=mkPoly();ctx.globalAlpha=al;ctx.beginPath();
+    for(let i=0;i<=320;i++){const z=ellPt(k,2*Math.PI*i/320);P.add(X(Pp[0]+z[0]-Rf[0]),Y(Pp[1]+z[1]-Rf[1]))}ctx.stroke()};
+  const iC=capT!=null?idxT(capT):n-1;
+  ctx.lineWidth=2;ctx.strokeStyle=css('--axis');ctx.setLineDash([2,6]);
+  if(pumping){ellK(pk,otm,.8);if(ob.pumpK[pidx+1])ellK(ob.pumpK[pidx+1],otm,.4)}
+  if(pre){
+    const i0=q.i+1,i1=iC,sk=Math.max(1,Math.floor((i1-i0)/700)),P=mkPoly();
+    ctx.globalAlpha=.8;ctx.beginPath();P.add(X(satF[0]),Y(satF[1]));
+    for(let i=i0;i<=i1;i+=sk){const r=pf(i);P.add(X(r[0]),Y(r[1]))}
+    if(i1>=i0){const r=pf(i1);P.add(X(r[0]),Y(r[1]))}
+    ctx.stroke();
+    if(kp&&XF&&!pumping)ellK(kp,ob.Ts,.45);
+  }else if(kcur)ellK(kcur,otm,.85);
+  ctx.setLineDash([]);ctx.globalAlpha=1;
+  // Kepler's second law: equal areas in equal times
+  if(OB.kep2&&kcur&&!pumping){
+    const k=kcur,Pp=pos(k.P,otm),Rf=sys?[0,0]:pos(fb,otm),fx=X(Pp[0]-Rf[0]),fy=Y(Pp[1]-Rf[1]),NS=8;
+    for(let j=0;j<NS;j++){
+      ctx.beginPath();ctx.moveTo(fx,fy);
+      const Ea=solveE(k.e,2*Math.PI*j/NS),Eb=j===NS-1?2*Math.PI:solveE(k.e,2*Math.PI*(j+1)/NS),P=mkPoly();
+      ctx.moveTo(fx,fy);for(let i=0;i<=24;i++){const z=ellPt(k,Ea+(Eb-Ea)*i/24);ctx.lineTo(X(Pp[0]+z[0]-Rf[0]),Y(Pp[1]+z[1]-Rf[1]))}
+      ctx.closePath();ctx.fillStyle=j%2?'#4B7BB5':ac;ctx.globalAlpha=.16;ctx.fill();
     }
-    ctx.setLineDash([]);ctx.globalAlpha=1;
-  }else{
-    const Pk=kp?pos(kp.P,otm<ob.Ts?ob.Ts:otm):null,KF=tt=>{const z=keplerAt(kp,tt);return F([Pk[0]+z.x,Pk[1]+z.y])};
-    ctx.lineWidth=2;ctx.strokeStyle=css('--axis');ctx.globalAlpha=.75;ctx.setLineDash([2,6]);ctx.beginPath();
-    ctx.moveTo(X(bp[0]),Y(bp[1]));for(let i=q.i+1;i<n;i++)ctx.lineTo(X(PX[i]),Y(PY[i]));
-    if(kp&&(B||otm>ob.Ts)){for(let i=0;i<=120;i++){const f=KF(kp.t0+kp.per*i/120);i?ctx.lineTo(X(f[0]),Y(f[1])):ctx.moveTo(X(f[0]),Y(f[1]))}}
-    ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
-    ctx.lineWidth=3;ctx.strokeStyle=ac;ctx.beginPath();
-    for(let i=0;i<=q.i;i++)i?ctx.lineTo(X(PX[i]),Y(PY[i])):ctx.moveTo(X(PX[0]),Y(PY[0]));
-    ctx.lineTo(X(bp[0]),Y(bp[1]));ctx.stroke();
-    if(kp&&otm>ob.Ts){const sp_=Math.min(kp.per*.45,otm-ob.Ts);ctx.beginPath();for(let i=0;i<=50;i++){const f=KF(otm-sp_+sp_*i/50);i?ctx.lineTo(X(f[0]),Y(f[1])):ctx.moveTo(X(f[0]),Y(f[1]))}ctx.stroke()}
+    ctx.globalAlpha=1;
   }
+  const iS=Math.min(q.i,iC),sk2=Math.max(1,Math.floor(iS/900)),PS=mkPoly();
+  ctx.lineWidth=3;ctx.strokeStyle=ac;ctx.beginPath();
+  for(let i=0;i<=iS;i+=sk2){const r=pf(i);PS.add(X(r[0]),Y(r[1]))}
+  {const r=pf(iS);PS.add(X(r[0]),Y(r[1]))}
+  if(pre)PS.add(X(satF[0]),Y(satF[1]));
+  ctx.stroke();
   ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--text');ctx.lineWidth=2;
-  const lp=mp(ob.xs[0],ob.ys[0],ob.ts[0],ob.rxs[0],ob.rys[0],ob.txs[0],ob.tys[0]);
-  ctx.beginPath();ctx.arc(X(lp[0]),Y(lp[1]),4.5,0,7);ctx.fill();ctx.stroke();label('Launch',X(lp[0]),Y(lp[1])-16);
-  let ri=0;
-  for(const b of ob.burns){if(b.kind==='Orbit raise')ri++;if(otm<b.t)continue;const bm=mp(b.x,b.y,b.t,b.rx,b.ry,b.tx,b.ty),bx=X(bm[0]),by=Y(bm[1]),big=/Capture|Departure/.test(b.kind),r_=big?7:5.5;
+  if(!capd){const lp=mpf(ob.xs[0],ob.ys[0],ob.ts[0]),lx=X(lp[0]),ly=Y(lp[1]);if(vis(lx,ly)){ctx.beginPath();ctx.arc(lx,ly,4.5,0,7);ctx.fill();ctx.stroke();label('Launch',lx+34,ly-4)}}
+  let ri=0;const nr=ob.burns.filter(b=>b.kind==='Orbit raise'&&b.t<=otm).length;
+  for(const b of ob.burns){if(b.kind==='Orbit raise')ri++;if(otm<b.t||(capd&&!/Capture/.test(b.kind)))continue;const bm=mpf(b.x,b.y,b.t),bx=X(bm[0]),by=Y(bm[1]);if(!vis(bx,by))continue;const big=/Capture|Departure/.test(b.kind),r_=big?7:5.5;
     ctx.beginPath();ctx.moveTo(bx,by-r_);ctx.lineTo(bx+r_,by);ctx.lineTo(bx,by+r_);ctx.lineTo(bx-r_,by);ctx.closePath();ctx.fill();ctx.stroke();
-    if(big)label(b.kind,bx,by-18);else if(b.kind==='Orbit raise'&&rf)label('Burn '+ri,bx,by+18)}
+    if(big)label(b.kind,bx,/Capture/.test(b.kind)?by+22:by-18);else if(b.kind==='Orbit raise'&&rf&&ri===nr)label('Burn '+ri,bx,by+18)}
+  if(kcur&&!pumping){
+    const k=kcur,Pp=pos(k.P,otm),Rf=sys?[0,0]:pos(fb,otm);
+    [[0,'Pe',k.a*(1-k.e)],[Math.PI,'Ap',k.a*(1+k.e)]].forEach(([Ev,nm,rr])=>{const z=ellPt(k,Ev),ax=X(Pp[0]+z[0]-Rf[0]),ay=Y(Pp[1]+z[1]-Rf[1]);if(!vis(ax,ay))return;
+      ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--axis');ctx.lineWidth=2;ctx.beginPath();ctx.arc(ax,ay,4,0,7);ctx.fill();ctx.stroke();
+      label(nm+' '+f((rr-k.P.R)/1000,0)+' km',ax,ay+(nm==='Pe'?38:-14))});
+  }
   let ip=null;
-  if(ob.hit){ip=mp(ob.xs[n-1],ob.ys[n-1],ob.ts[n-1],ob.rxs[n-1],ob.rys[n-1],ob.txs[n-1],ob.tys[n-1]);const ex=X(ip[0]),ey=Y(ip[1]);ctx.beginPath();ctx.arc(ex,ey,4.5,0,7);ctx.fill();ctx.stroke();label(ob.hit===L?'Impact · '+f(ob.range/1000,0)+' km':'Impact on '+ob.hit.n,ex,ey-16)}
-  ctx.fillStyle=ac;ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(bp[0]),Y(bp[1]),8,0,7);ctx.fill();ctx.stroke();
-  if(landAt&&ip){const u=(nowT-landAt)/800;if(u<1){ctx.strokeStyle=ac;ctx.globalAlpha=1-u;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(ip[0]),Y(ip[1]),8+u*36,0,7);ctx.stroke();ctx.globalAlpha=1}}
+  if(ob.hit){ip=pf(n-1);const ex=X(ip[0]),ey=Y(ip[1]);if(vis(ex,ey)){ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--text');ctx.lineWidth=2;ctx.beginPath();ctx.arc(ex,ey,4.5,0,7);ctx.fill();ctx.stroke();label(ob.hit===L?'Impact · '+f(ob.range/1000,0)+' km':'Impact on '+ob.hit.n,ex,ey-16)}}
+  const sx=X(satF[0]),sy=Y(satF[1]);
+  if(vis(sx,sy)){ctx.fillStyle=ac;ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,8,0,7);ctx.fill();ctx.stroke()}
+  if(landAt&&ip){const u=(nowT-landAt)/800;if(u<1&&vis(X(ip[0]),Y(ip[1]))){ctx.strokeStyle=ac;ctx.globalAlpha=1-u;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(ip[0]),Y(ip[1]),8+u*36,0,7);ctx.stroke();ctx.globalAlpha=1}}
   const Ls=nice(110/s),bl=Ls*s,by=Hh-padB+14;
   ctx.strokeStyle=css('--text');ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,by);ctx.lineTo(20+bl,by);ctx.moveTo(20,by-5);ctx.lineTo(20,by+5);ctx.moveTo(20+bl,by-5);ctx.lineTo(20+bl,by+5);ctx.stroke();
   label(Ls>=1.5e10?(+(Ls/1.496e11).toPrecision(2))+' AU':Ls>=1000?+(Ls/1000).toPrecision(3)+' km':Ls+' m',20+bl/2,by+16);
@@ -964,6 +1047,7 @@ cv.addEventListener('wheel',e=>{if(mode!=='orbit')return;e.preventDefault();cons
 $('tzi').onclick=()=>oz(1.5,W/2,OYM);$('tzo').onclick=()=>oz(1/1.5,W/2,OYM);
 $('tzr').onclick=()=>{ZO=1;PN[0]=PN[1]=0;VO=null};
 $('rpl').onclick=()=>{if(mode==='orbit'){otm=0;oplay=true;rateCur=0;capSeen=false;capAt=0;bnIdx=0}else{tm=0;playing=R.T>0}icon()};
+$('kp2').onclick=e=>{OB.kep2=!OB.kep2;e.target.classList.toggle('on',OB.kep2)};
 calc();results();sync();icon();requestAnimationFrame(loop);
 </script>
 </body>
