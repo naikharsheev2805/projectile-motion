@@ -82,13 +82,15 @@ aside.col>:not(.grab){display:none}
 canvas{touch-action:none}
 .res .w2{grid-column:span 2}
 .res em{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:3px;font-family:Georgia,serif}
-.ver{margin:26px 0 4px;text-align:center;font-size:11px;color:var(--muted);letter-spacing:.06em}
+.ver{margin:34px 0 2px;text-align:center;font-size:10.5px;color:var(--muted);opacity:.3;letter-spacing:.08em;user-select:none}
 #tzi,#tzo,#tzr{display:none}main.orb #tzi,main.orb #tzo,main.orb #tzr{display:flex}
 main.orb #tsc,main.orb #tpin,main.orb #tclr,main.orb #ttg{display:none}
 .bch button{display:inline-flex;align-items:center;gap:7px}
 .bch button i{width:9px;height:9px;border-radius:50%;background:var(--bc);box-shadow:0 0 0 1.5px var(--bc);opacity:.4}
 .chips.bch button.on{background:var(--card);border-color:var(--accent);color:var(--text)}
 .chips.bch button.on i{opacity:1}
+.pace{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--card);border:1px solid var(--line);border-radius:12px;padding:6px 14px;text-align:center;box-shadow:0 4px 14px rgba(0,0,0,.08);z-index:4;max-width:calc(100% - 28px);pointer-events:none}
+.pace b{display:block;font-size:12.5px;font-weight:600}.pace span{display:block;font-size:11px;color:var(--muted)}
 .busy{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 20px;box-shadow:0 8px 30px rgba(0,0,0,.16);z-index:6;font-size:14px;white-space:nowrap}
 .busy i{width:18px;height:18px;border:2.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -160,11 +162,12 @@ select:focus{border-color:var(--accent)}
     <h2>Simulate for</h2>
     <div class="chips" id="odu"></div>
   </section>
-  <p class="ver">Build G7 · Gravitation</p>
+  <p class="ver">v2.10.0 · build G16</p>
 </aside>
 <main>
   <canvas id="cv"></canvas>
   <div class="toast" id="toast"></div>
+  <div class="pace" id="pace" hidden><b id="pace1"></b><span id="pace2"></span></div>
   <div class="busy" id="busy" hidden><i></i><span id="busyt">Running calculations…</span></div>
   <div class="tools">
     <button id="tzi" title="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
@@ -443,7 +446,7 @@ $('sg').onclick=calcGo;renderK();note(NOTE0);
 $('tabs').onclick=e=>{const t=e.target.dataset.t;if(!t)return;
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b===e.target));
   $('tp').hidden=t!=='tp';$('tc').hidden=t!=='tc';$('to').hidden=t!=='to';$('sub').textContent=t==='to'?'Gravitation · satellites, escape velocity & Kepler’s laws':'Motion under constant gravity';if(t==='tc')condSync();
-  mode=t==='to'?'orbit':'play';document.querySelector('main').classList.toggle('orb',mode==='orbit');VO=null;ZO=1;PN[0]=PN[1]=0;spdLbl();
+  mode=t==='to'?'orbit':'play';if(mode!=='orbit')paceUi('');document.querySelector('main').classList.toggle('orb',mode==='orbit');VO=null;ZO=1;PN[0]=PN[1]=0;spdLbl();
   if(mode==='orbit'){orbRestart();osync()}else{landAt=0;icon()}
   document.querySelector('aside').scrollTop=0};
 const grab=$('grab'),aside=document.querySelector('aside');let gd=false,gm=false,gy0=0;
@@ -500,18 +503,25 @@ const BD=[
 {n:'Earth',GM:3.986004e14,R:6.371e6,c:'#4F86B8',par:'Sun',a:1.496e11,P:3.15576e7,ph:0},
 {n:'Moon',GM:4.9048e12,R:1.7374e6,c:'#A8A7A1',par:'Earth',a:3.844e8,P:2.3606e6,ph:0},
 {n:'Mars',GM:4.2828e13,R:3.3895e6,c:'#C97B55',par:'Sun',a:2.2794e11,P:5.9355e7,ph:4.4},
+{n:'Phobos',GM:7.087e5,R:1.1267e4,c:'#8A7F72',par:'Mars',a:9.376e6,P:2.7553e4,ph:1.7},
+{n:'Deimos',GM:9.62e4,R:6.2e3,c:'#A39B8E',par:'Mars',a:2.3463e7,P:1.09123e5,ph:3.9},
 {n:'Jupiter',GM:1.26687e17,R:6.9911e7,c:'#C9A27C',par:'Sun',a:7.7857e11,P:3.7435e8,ph:1.2},
 {n:'Io',GM:5.96e12,R:1.8216e6,c:'#D8C14A',par:'Jupiter',a:4.217e8,P:1.5287e5,ph:.3},
 {n:'Europa',GM:3.2027e12,R:1.5608e6,c:'#C8B8A0',par:'Jupiter',a:6.711e8,P:3.0675e5,ph:2.2},
 {n:'Ganymede',GM:9.8878e12,R:2.6341e6,c:'#9E958A',par:'Jupiter',a:1.0704e9,P:6.1819e5,ph:4.1},
 {n:'Callisto',GM:7.1793e12,R:2.4103e6,c:'#7C7468',par:'Jupiter',a:1.8827e9,P:1.4419e6,ph:1},
 {n:'Saturn',GM:3.7931e16,R:5.8232e7,c:'#D8C08A',par:'Sun',a:1.43353e12,P:9.2956e8,ph:5.1},
+{n:'Enceladus',GM:7.2113e9,R:2.521e5,c:'#E4E8EE',par:'Saturn',a:2.3802e8,P:1.18386e5,ph:2.6},
+{n:'Rhea',GM:1.5394e11,R:7.638e5,c:'#B9B5AE',par:'Saturn',a:5.27108e8,P:3.9033e5,ph:5.5},
 {n:'Titan',GM:8.9781e12,R:2.5755e6,c:'#D39B4E',par:'Saturn',a:1.2219e9,P:1.3777e6,ph:.7},
 {n:'Uranus',GM:5.794e15,R:2.5362e7,c:'#8CC7CF',par:'Sun',a:2.87246e12,P:2.6514e9,ph:3},
-{n:'Neptune',GM:6.8365e15,R:2.4622e7,c:'#4C6FC4',par:'Sun',a:4.49506e12,P:5.2002e9,ph:.8}];
+{n:'Titania',GM:2.282e11,R:7.884e5,c:'#B8B2A7',par:'Uranus',a:4.3591e8,P:7.522e5,ph:4.6},
+{n:'Oberon',GM:1.924e11,R:7.614e5,c:'#8F8579',par:'Uranus',a:5.8352e8,P:1.1631e6,ph:1.9},
+{n:'Neptune',GM:6.8365e15,R:2.4622e7,c:'#4C6FC4',par:'Sun',a:4.49506e12,P:5.2002e9,ph:.8},
+{n:'Triton',GM:1.4276e12,R:1.3534e6,c:'#C8D4DA',par:'Neptune',a:3.54759e8,P:-5.078e5,ph:2.3}];
 const BI={};BD.forEach(b=>BI[b.n]=b);
 const on={Earth:true};let LB='Earth';
-const OB={v:7,a:0,h:190,p:0,dir:1,view:'Local',dur:0,tgt:null,tmax:0,pump:null,route:'',via:null,focus:null,Q:null,kep2:false};
+const OB={v:7,a:0,h:190,p:0,dir:1,view:'Local',dur:0,tgt:null,tmax:0,pump:null,route:'',via:null,focus:null,Q:null,kep2:false,userView:false};
 BD.forEach(b=>b.ph0=b.ph);
 let ob=null,otm=0,oplay=true,VO=null,spdO=4,ZO=1,OYM=0;const PN=[0,0];
 const fmtT=t=>t<120?t.toFixed(1)+' s':t<7200?(t/60).toFixed(1)+' min':t<172800?(t/3600).toFixed(1)+' h':t<6e7?(t/86400).toFixed(1)+' d':(t/31557600).toFixed(2)+' yr';
@@ -549,7 +559,7 @@ function orbCalc(scan,TmaxOver,opts){
   opts=opts||{};
   const L=BI[LB],E=BD.filter(b=>on[b.n]),B=OB.tgt?BI[OB.tgt]:null,trk=opts.track||B,iB=trk?E.indexOf(trk):-1,GM=L.GM,Rp=L.R,r0=Rp+OB.h*1000,v0=OB.v*1000,al=OB.a*D;
   const bs=basis(L,OB.p,OB.dir),hh=bs.hh,uu=bs.uu,pump=OB.pump&&OB.pump.length?OB.pump:null,K=pump?pump.length:0,S=pump?[v0,...pump]:[v0];
-  const via=OB.via&&OB.tgt?BI[OB.via]:null,sp=S[K],cc=pump?1:Math.cos(al),ss=pump?0:Math.sin(al);
+  const via=OB.via&&OB.tgt?BI[OB.via]:null,sp=S[K],numPump=!!pump&&E.length>1,spI=numPump?S[0]:sp,cc=pump?1:Math.cos(al),ss=pump?0:Math.sin(al);
   const vc=Math.sqrt(GM/r0),ve=vc*Math.SQRT2,eps=v0*v0/2-GM/r0,Lm=r0*v0*Math.cos(al),bound=eps<0;
   const sa=bound?-GM/(2*eps):Infinity,Torb=bound?2*Math.PI*Math.sqrt(sa*sa*sa/GM):Infinity;
   const e=Math.sqrt(Math.max(0,1+2*eps*Lm*Lm/(GM*GM))),rp=sa*(1-e),ra=sa*(1+e);
@@ -557,8 +567,8 @@ function orbCalc(scan,TmaxOver,opts){
   const xs=[],ys=[],rxs=[],rys=[],txs=[],tys=[],vrx=[],vry=[],ts=[],burns=[],pstart=[],pumpK=[];
   const rec=(t,x,y,vx,vy)=>{const q=pos(L,t),vl=vel(L,t);xs.push(x);ys.push(y);rxs.push(x-q[0]);rys.push(y-q[1]);vrx.push(vx-vl[0]);vry.push(vy-vl[1]);ts.push(t);if(B){const b=pos(B,t);txs.push(x-b[0]);tys.push(y-b[1])}};
   const bmk=(t,dv,kind,x,y)=>{const qL=pos(L,t),qB=B?pos(B,t):[0,0];return{t,dv,kind,x,y,rx:x-qL[0],ry:y-qL[1],tx:x-qB[0],ty:y-qB[1]}};
-  let t=0;
-  if(pump){
+  let t=0,pIdx=0,pvrL=null;
+  if(pump&&!numPump){
     let prevV=vc;
     for(let i=0;i<K;i++){
       const k=mkKep(L,t,r0*uu[0],r0*uu[1],S[i]*hh[0],S[i]*hh[1]);if(!k)return scan?{dmin:Infinity}:null;
@@ -568,36 +578,57 @@ function orbCalc(scan,TmaxOver,opts){
     }
     if(!scan){const q=pos(L,t);burns.push(bmk(t,sp-prevV,'Departure burn',q[0]+r0*uu[0],q[1]+r0*uu[1]));pstart.push(t)}
   }
-  const tdep=t,p0=pos(L,t),vb=vel(L,t);
-  let x=p0[0]+r0*uu[0],y=p0[1]+r0*uu[1],vx=vb[0]+sp*(cc*hh[0]+ss*uu[0]),vy=vb[1]+sp*(cc*hh[1]+ss*uu[1]);
+  let tdep=t;const p0=pos(L,t),vb=vel(L,t),iL=E.indexOf(L);
+  let x=p0[0]+r0*uu[0],y=p0[1]+r0*uu[1],vx=vb[0]+spI*(cc*hh[0]+ss*uu[0]),vy=vb[1]+spI*(cc*hh[1]+ss*uu[1]);
   if(!scan)rec(t,x,y,vx,vy);
-  const nE=E.length;let cT=NaN,cP=null,cT2=NaN,cP2=null;
-  const bp=t=>{if(t===cT)return cP;if(t===cT2)return cP2;const P=new Array(nE);for(let i=0;i<nE;i++)P[i]=pos(E[i],t);cT2=cT;cP2=cP;cT=t;cP=P;return P};
-  const acc=(x,y,t)=>{let ax=0,ay=0;const PS=bp(t);for(let i=0;i<nE;i++){const b=E[i],q=PS[i],dx=x-q[0],dy=y-q[1],r2=dx*dx+dy*dy,k=-b.GM/(r2*Math.sqrt(r2));ax+=k*dx;ay+=k*dy}return[ax,ay]};
-  const g0=GM/(r0*r0),dcap=.03*(sp+1)/g0+.05,tau=100*dcap,md=E.map(()=>Infinity);
-  let hit=null,ang=0,pa=0,maxr=r0,rng=0,burned=null,pvr=null,tA=0,kep=null,kep1=null,stopped=null;
+  if(numPump&&!scan){burns.push(bmk(0,S[0]-vc,'Launch',x,y));pstart.push(0);pumpK.push(mkKep(L,0,r0*uu[0],r0*uu[1],S[0]*hh[0],S[0]*hh[1]))}
+  const nE=E.length,soi=E.map(b=>b.par&&BI[b.par]?Math.max(b.a*Math.pow(b.GM/BI[b.par].GM,.4),10*b.R):Infinity);let cT=NaN,cP=null,cT2=NaN,cP2=null;
+  const Ep=E.filter(b=>b===L||b.par===L.n||b.n===L.par),use=E.map(b=>!numPump||Ep.includes(b)),openAll=()=>{for(let i=0;i<nE;i++)use[i]=true;cT=NaN;cT2=NaN;cP=null;cP2=null};
+  const bp=t=>{if(t===cT)return cP;if(t===cT2)return cP2;const P=new Array(nE);for(let i=0;i<nE;i++)P[i]=use[i]?pos(E[i],t):null;cT2=cT;cP2=cP;cT=t;cP=P;return P};
+  const acc=(x,y,t)=>{let ax=0,ay=0;const PS=bp(t);for(let i=0;i<nE;i++){const b=E[i],q=PS[i];if(!q)continue;const dx=x-q[0],dy=y-q[1],r2=dx*dx+dy*dy,k=-b.GM/(r2*Math.sqrt(r2));ax+=k*dx;ay+=k*dy}return[ax,ay]};
+  const g0=GM/(r0*r0),dcap=.03*(sp+1)/g0+.05,tau=100*dcap,md=E.map(()=>Infinity),tmd=E.map(()=>0),vmd=E.map(()=>0);
+  let hit=null,ang=0,pa=0,maxr=r0,rng=0,burned=null,pvr=null,tA=0,kep=null,kep1=null,stopped=null,pkey=null;
+  if(numPump&&scan){
+    pkey=[LB,OB.h,OB.v,JSON.stringify(OB.pump),OB.p,OB.dir,Ep.map(b=>b.n+':'+b.ph).join(',')].join('|');
+    const c=pumpCache.get(pkey);if(c){t=c.t;x=c.x;y=c.y;vx=c.vx;vy=c.vy;pIdx=K;tdep=c.t;openAll()}
+  }
   for(let n=0;n<80000&&t<Tmax;n++){
-    let bd=0,bk=-1;
-    const PS0=bp(t);for(let i=0;i<nE;i++){const q=PS0[i],d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(k>bk){bk=k;bd=i}}
+    let bd=0,bk=-1,rdm=Infinity;
+    const PS0=bp(t);for(let i=0;i<nE;i++){const q=PS0[i];if(!q)continue;const d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(d<rdm&&d<3*soi[i])rdm=d;if(k>bk){bk=k;bd=i}}
     const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]);
-    const dt=Math.min(.004*rd/Math.max(rs,1),dcap*(1+(t-tdep)/tau),Tmax-t),px=x,py=y,pt=t;
+    const dt=Math.min(.004*Math.min(rd,rdm)/Math.max(rs,1),dcap*(1+(t-tdep)/tau),Tmax-t),px=x,py=y,pt=t;
     const a1=acc(x,y,t),x2=x+vx*dt/2,y2=y+vy*dt/2,vx2=vx+a1[0]*dt/2,vy2=vy+a1[1]*dt/2,a2=acc(x2,y2,t+dt/2);
     const x3=x+vx2*dt/2,y3=y+vy2*dt/2,vx3=vx+a2[0]*dt/2,vy3=vy+a2[1]*dt/2,a3=acc(x3,y3,t+dt/2);
     const x4=x+vx3*dt,y4=y+vy3*dt,vx4=vx+a3[0]*dt,vy4=vy+a3[1]*dt,a4=acc(x4,y4,t+dt);
     x+=dt/6*(vx+2*vx2+2*vx3+vx4);y+=dt/6*(vy+2*vy2+2*vy3+vy4);
     vx+=dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]);vy+=dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1]);t+=dt;
     for(let i=0;i<E.length&&!hit;i++){
-      const b=E[i],q=bp(t)[i],d=Math.hypot(x-q[0],y-q[1]);
+      const b=E[i],q=bp(t)[i];if(!q)continue;const d=Math.hypot(x-q[0],y-q[1]);
       if(d<b.R*(1-1e-7)){const q0=pos(b,pt),d0=Math.hypot(px-q0[0],py-q0[1]),f0=d0>b.R?(d0-b.R)/(d0-d):0;x=px+(x-px)*f0;y=py+(y-py)*f0;t=pt+dt*f0;hit=b}
-      md[i]=Math.min(md[i],d);
+      if(d<md[i]){md[i]=d;if(d<3*soi[i]&&b!==L){tmd[i]=t;const vv=vel(b,t);vmd[i]=Math.hypot(vx-vv[0],vy-vv[1])}}
     }
     if(B&&!tA){const tr=via||B,q=pos(tr,t);if(Math.hypot(x-q[0],y-q[1])<(via?1.5*B.a:25*B.R))tA=t}
+    if(numPump&&pIdx<K&&!hit){
+      const qL=bp(t)[iL],vL=vel(L,t),bx=x-qL[0],by=y-qL[1],wx=vx-vL[0],wy=vy-vL[1],rr=Math.hypot(bx,by),rad=(bx*wx+by*wy)/rr;
+      if(pvrL!==null&&pvrL<0&&rad>=0&&rr<3*r0){
+        pIdx++;const vcur=Math.hypot(wx,wy),vnew=Math.sqrt(2*(S[pIdx]*S[pIdx]/2-GM/r0+GM/rr)),f_=vnew/vcur;
+        vx=vL[0]+wx*f_;vy=vL[1]+wy*f_;
+        if(!scan){burns.push(bmk(t,vnew-vcur,pIdx<K?'Orbit raise':'Departure burn',x,y));pstart.push(t);if(pIdx<K)pumpK.push(mkKep(L,t,bx,by,wx*f_,wy*f_)||pumpK[pumpK.length-1])}
+        if(pIdx===K){tdep=t;openAll();if(scan&&pkey)pumpCache.set(pkey,{t,x,y,vx,vy})}
+      }
+      else if(pvrL!==null&&pvrL>0&&rad<=0&&rr>2*r0&&pIdx<K){
+        const vcur=Math.hypot(wx,wy),vnew=Math.sqrt(2*GM*r0/(rr*(r0+rr))),f_=vnew/vcur;
+        vx=vL[0]+wx*f_;vy=vL[1]+wy*f_;
+        if(!scan)burns.push(bmk(t,vnew-vcur,'Perigee fix',x,y));
+      }
+      pvrL=rad;
+    }
     const C1=via||B;
     if(C1&&(!scan||opts.cap1)&&!burned&&!hit){
       const qB=pos(C1,t),vB=vel(C1,t),bx=x-qB[0],by=y-qB[1],wx=vx-vB[0],wy=vy-vB[1],rr=Math.hypot(bx,by),rad=(bx*wx+by*wy)/rr;
       if(pvr!==null&&pvr<0&&rad>=0&&rr<(via?2*B.a:8*C1.R)){
         const rc=via?8*rr:capRa(C1,rr),ve2=Math.sqrt(C1.GM*(2/rr-2/(rr+rc))),sg=(bx*wy-by*wx)>=0?1:-1,nwx=-sg*by/rr*ve2,nwy=sg*bx/rr*ve2;
-        burned={t,dv:Math.hypot(nwx-wx,nwy-wy),x,y,rr,alt:rr-C1.R,ra:rc};vx=vB[0]+nwx;vy=vB[1]+nwy;kep=mkKep(C1,t,bx,by,nwx,nwy);
+        burned={t,dv:Math.hypot(nwx-wx,nwy-wy),x,y,rr,alt:rr-C1.R,ra:rc,vrel:Math.hypot(wx,wy)};vx=vB[0]+nwx;vy=vB[1]+nwy;kep=mkKep(C1,t,bx,by,nwx,nwy);
         if(scan)return{kep,t1:t,rel:[bx,by],rr};
       }
       pvr=rad;
@@ -612,16 +643,17 @@ function orbCalc(scan,TmaxOver,opts){
     if(!B&&auto&&eps>=0&&!opts.stop&&Math.hypot(x-pos(L,t)[0],y-pos(L,t)[1])>25*Rp)break;
   }
   if(scan)return{dmin:iB>=0?md[iB]:Infinity,hit,t,x,y,vx,vy};
-  let burn1=null;
+  let burn1=null,contS=null;
   if(via&&burned&&!hit){
     burn1=burned;burns.push(bmk(burn1.t,burn1.dv,'Planet capture burn',burn1.x,burn1.y));
     const k1=kep,t1=burn1.t,t2=t1+k1.per;kep1=k1;
     for(let j=1;j<=200;j++){const tt=t1+k1.per*j/200,s_=keplerAt(k1,tt),pv=pos(via,tt),vv=vel(via,tt);rec(tt,pv[0]+s_.x,pv[1]+s_.y,vv[0]+s_.vx,vv[1]+s_.vy)}
     const s_=keplerAt(k1,t2),pv=pos(via,t2),vv=vel(via,t2),xx=pv[0]+s_.x,yy=pv[1]+s_.y,qB=pos(B,t2),vB=vel(B,t2),bx=xx-qB[0],by=yy-qB[1],wx=vv[0]+s_.vx-vB[0],wy=vv[1]+s_.vy-vB[1],rr=Math.hypot(bx,by);
     const rc=capRa(B,rr),ve2=Math.sqrt(B.GM*(2/rr-2/(rr+rc))),sg=(bx*wy-by*wx)>=0?1:-1,nwx=-sg*by/rr*ve2,nwy=sg*bx/rr*ve2;
-    t=t2;burned={t:t2,dv:Math.hypot(nwx-wx,nwy-wy),x:xx,y:yy,rr,alt:rr-B.R,ra:rc};kep=mkKep(B,t2,bx,by,nwx,nwy);rec(t2,xx,yy,vB[0]+nwx,vB[1]+nwy);
+    t=t2;burned={t:t2,dv:Math.hypot(nwx-wx,nwy-wy),x:xx,y:yy,rr,alt:rr-B.R,ra:rc,vrel:Math.hypot(wx,wy)};kep=mkKep(B,t2,bx,by,nwx,nwy);rec(t2,xx,yy,vB[0]+nwx,vB[1]+nwy);contS={x:xx,y:yy,vx:vB[0]+nwx,vy:vB[1]+nwy,t:t2};
   }
   if(!B&&!hit){const i=xs.length-1,k=mkKep(L,t,rxs[i],rys[i],vrx[i],vry[i]);if(k)kep=k}
+  if(!contS&&kep&&!hit)contS={x,y,vx,vy,t};
   let type;
   if(hit)type='Impact on '+hit.n;
   else if(B&&burned)type='Captured — elliptical orbit around '+B.n+(via?' (via '+via.n+' orbit)':'');
@@ -640,20 +672,23 @@ function orbCalc(scan,TmaxOver,opts){
       const sl=Math.max(0,txs.length-2);bbP=[-burned.ra,burned.ra,-burned.ra,burned.ra]}
     else bbP=bbT;
   }
-  const Ts=Math.max(t,1);let sched=[],tCap=0;
+  const Ts=Math.max(t,1);let sched=[],tCap=0,pace=null;
   const Dp=Math.min(15,9+2*K);
   if(B&&burned){
+    const capT_=burn1?burn1.t:t,Ta=Math.max(capT_-(tA||capT_*.9),60),bcap=burn1||burned,rF=Math.max(Math.min(Ta/22,1.8*bcap.rr/Math.max(bcap.vrel,1)),1),rF2=burn1?Math.max(1.8*burned.rr/Math.max(burned.vrel,1),1):0,tauE=.55,fly=[];
+    E.forEach((b,i)=>{if(b!==L&&b!==B&&b!==via&&b.n!=='Sun'&&b!==hit&&md[i]<1.5*soi[i]&&tmd[i]>tdep&&tmd[i]<capT_)fly.push({t:tmd[i],n:b.n,rF:Math.max(md[i]/Math.max(vmd[i],1)/2.5,60),tau:.7})});
+    const rFd=K>0?Math.max((pstart[K]-pstart[K-1])/(Dp/K),200):3600;
+    const ev=[{t:tdep,rF:rFd,tau:tauE},...fly.map(f=>({t:f.t,rF:f.rF,tau:f.tau})),{t:capT_,rF,tau:.85}];
+    pace={tdep,capT:capT_,ev,fly,rF,rF2,tau:.85,t2:burn1?t:null};tCap=Math.max(tdep,capT_-Ta);
     for(let i=0;i<K;i++)sched.push([pstart[i],pstart[i+1],Dp/K]);
-    const ta=Math.min(Math.max(tA||t*.9,tdep+1),t*.995),c0=tdep;tCap=ta;
-    sched.push([c0,ta,4],[ta,burn1?burn1.t:t,8]);if(burn1)sched.push([burn1.t,t,6]);
   }else sched.push([0,Ts,B?Dp+12:20]);
   const dvTot=burns.reduce((s,b)=>s+Math.max(0,b.dv),0);
-  ob={xs,ys,rxs,rys,txs,tys,vrx,vry,ts,Ts,tCap,via,tgtN:B?B.n:null,kep1,t1:burn1?burn1.t:null,Q:OB.Q,tdep,pumpK,pstart,Tend:Ts+(kep?kep.per:0),kep,hit,range:rng,maxAlt:maxr-Rp,vc,ve,eps,bound,Torb,rp,ra,type,r0,close,xfer:xf,burns,sched,dvTot,K,bbT,bbP,
-    kepRate:kep?kep.per/10:0,
+  ob={xs,ys,rxs,rys,txs,tys,vrx,vry,ts,Ts,Ts0:Ts,tCap,via,tgtN:B?B.n:null,kep1,t1:burn1?burn1.t:null,Q:OB.Q,tdep,pumpK,pstart,Tend:Ts+(kep?kep.per:0),kep,hit,range:rng,maxAlt:maxr-Rp,vc,ve,eps,bound,Torb,rp,ra,type,r0,close,xfer:xf,burns,sched,pace,dvTot,K,bbT,bbP,
+    kepRate:kep?kep.per/10:0,cont:(contS&&kep&&E.length>1)?{...contS,Pn:(B&&burned)?B.n:L.n,En:E.map(b=>b.n)}:null,
     bbL:[...mm(rxs),...mm(rys)],bbS:[...mm(xs.concat(pts.map(p=>p[0]))),...mm(ys.concat(pts.map(p=>p[1])))]};
 }
 function atT(t){
-  if(t>ob.Ts&&ob.kep){
+  if(t>ob.Ts&&ob.kep&&!ob.cont){
     const k=ob.kep,P=k.P,s=keplerAt(k,t),Pp=pos(P,t),vP=vel(P,t),x=Pp[0]+s.x,y=Pp[1]+s.y,qL=pos(BI[LB],t),vL=vel(BI[LB],t),B=ob.tgtN?BI[ob.tgtN]:null,qB=B?pos(B,t):null;
     return{i:ob.ts.length-1,x,y,rx:x-qL[0],ry:y-qL[1],vx:vP[0]+s.vx-vL[0],vy:vP[1]+s.vy-vL[1],tx:qB?x-qB[0]:0,ty:qB?y-qB[1]:0};
   }
@@ -665,13 +700,56 @@ function atT(t){
   if(ob.txs.length){r.tx=M(ob.txs[lo],ob.txs[hi]);r.ty=M(ob.tys[lo],ob.tys[hi])}
   return r;
 }
-function simRate(t){
-  const s=ob.sched;
-  for(const[a,b,d]of s)if(t>=a&&t<b)return(b-a)/d;
-  if(t>=s[s.length-1][1])return ob.kep?ob.kepRate:0;
-  return(s[0][1]-s[0][0])/s[0][2];
+const ss3=u=>{u=Math.max(0,Math.min(1,u));return u*u*(3-2*u)};
+function transitRate(t){
+  const P=ob.pace;
+  if(t<P.capT){let r=Infinity;for(const e of P.ev)r=Math.min(r,Math.max(e.rF,Math.abs(t-e.t)/e.tau));return r}
+  if(P.t2!=null&&t<P.t2)return Math.min(Math.max((P.t2-P.capT)/6,1),Math.max(P.rF2,(P.t2-t)/P.tau));
+  return ob.kep?ob.kepRate:0;
 }
-let curPlan={cancelled:false},planN=0;
+function extendOb(tTarget){
+  const C=ob.cont;if(!C||ob.hit)return;
+  const E=C.En.map(n=>BI[n]),nE=E.length,L=BI[LB],B=ob.tgtN?BI[ob.tgtN]:null,hasT=ob.txs.length>0;
+  const soi=E.map(b=>b.par&&BI[b.par]?Math.max(b.a*Math.pow(b.GM/BI[b.par].GM,.4),10*b.R):Infinity);
+  let cT=NaN,cP=null,cT2=NaN,cP2=null;
+  const bp=tt=>{if(tt===cT)return cP;if(tt===cT2)return cP2;const P=new Array(nE);for(let i=0;i<nE;i++)P[i]=pos(E[i],tt);cT2=cT;cP2=cP;cT=tt;cP=P;return P};
+  const acc=(x,y,tt)=>{let ax=0,ay=0;const PS=bp(tt);for(let i=0;i<nE;i++){const q=PS[i],dx=x-q[0],dy=y-q[1],r2=dx*dx+dy*dy,k=-E[i].GM/(r2*Math.sqrt(r2));ax+=k*dx;ay+=k*dy}return[ax,ay]};
+  let{x,y,vx,vy,t}=C,steps=0;
+  while(t<tTarget&&steps<5000&&ob.xs.length<300000){
+    steps++;
+    const PS0=bp(t);let bd=0,bk=-1,rdm=Infinity;
+    for(let i=0;i<nE;i++){const q=PS0[i],d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(d<rdm&&d<3*soi[i])rdm=d;if(k>bk){bk=k;bd=i}}
+    const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]),dt=.004*Math.min(rd,rdm)/Math.max(rs,1),px=x,py=y,pt=t;
+    const a1=acc(x,y,t),x2=x+vx*dt/2,y2=y+vy*dt/2,vx2=vx+a1[0]*dt/2,vy2=vy+a1[1]*dt/2,a2=acc(x2,y2,t+dt/2);
+    const x3=x+vx2*dt/2,y3=y+vy2*dt/2,vx3=vx+a2[0]*dt/2,vy3=vy+a2[1]*dt/2,a3=acc(x3,y3,t+dt/2);
+    const x4=x+vx3*dt,y4=y+vy3*dt,vx4=vx+a3[0]*dt,vy4=vy+a3[1]*dt,a4=acc(x4,y4,t+dt);
+    x+=dt/6*(vx+2*vx2+2*vx3+vx4);y+=dt/6*(vy+2*vy2+2*vy3+vy4);
+    vx+=dt/6*(a1[0]+2*a2[0]+2*a3[0]+a4[0]);vy+=dt/6*(a1[1]+2*a2[1]+2*a3[1]+a4[1]);t+=dt;
+    let hit=null;const PS1=bp(t);
+    for(let i=0;i<nE&&!hit;i++){const q=PS1[i],d=Math.hypot(x-q[0],y-q[1]);
+      if(d<E[i].R*(1-1e-7)){const q0=PS0[i],d0=Math.hypot(px-q0[0],py-q0[1]),f0=d0>E[i].R?(d0-E[i].R)/(d0-d):0;x=px+(x-px)*f0;y=py+(y-py)*f0;t=pt+dt*f0;hit=E[i]}}
+    const qL=pos(L,t),vl=vel(L,t);
+    ob.xs.push(x);ob.ys.push(y);ob.rxs.push(x-qL[0]);ob.rys.push(y-qL[1]);ob.vrx.push(vx-vl[0]);ob.vry.push(vy-vl[1]);ob.ts.push(t);
+    if(hasT){const qb=pos(B,t);ob.txs.push(x-qb[0]);ob.tys.push(y-qb[1])}
+    if(hit){ob.hit=hit;ob.cont=null;ob.kep=null;ob.type='Impact on '+hit.n+' after '+fmtT(t-ob.Ts0)+' in orbit';break}
+  }
+  ob.Ts=t;if(ob.cont){C.x=x;C.y=y;C.vx=vx;C.vy=vy;C.t=t}
+}
+function simRate(t){
+  const P=ob.pace,s=ob.sched,n=s.length;
+  if(P&&(n===0||t>=P.tdep))return transitRate(Math.max(t,P.tdep));
+  const tail=P?transitRate(P.tdep):(ob.kep?ob.kepRate:0),R=j=>j<n?(s[j][1]-s[j][0])/s[j][2]:tail;
+  let i=0;
+  if(t>=s[n-1][1])i=n;else for(let j=0;j<n;j++)if(t>=s[j][0]&&t<s[j][1]){i=j;break}
+  if(i===n&&tail<=0)return 0;
+  let r=Math.log(R(i));
+  for(let k=1;k<=n;k++){
+    const tb=s[k-1][1],sp0=s[k-1][1]-s[k-1][0],sp1=k<n?s[k][1]-s[k][0]:sp0,h=.15*Math.min(sp0,sp1);
+    if(Math.abs(t-tb)<h&&(k<n||tail>0)){const u=ss3((t-tb+h)/(2*h));r=Math.log(R(k-1))*(1-u)+Math.log(R(k))*u;break}
+  }
+  return Math.exp(r);
+}
+let curPlan={cancelled:false},planN=0;const pumpCache=new Map();
 const yld=()=>new Promise(r=>setTimeout(r,0));
 const osim=async(...a)=>{await yld();if(curPlan.cancelled)throw new Error('cancel');if(++planN%5===0&&typeof planProg==='function')planProg(planN);return orbCalc(...a)};
 async function aim(set,track,target,w,sc){for(const m of[1,4,16])if(await aim1(set,track,target,w*m,sc))return true;return false}
@@ -682,11 +760,12 @@ async function aim1(set,track,target,w,sc){
   for(let i=0;i<22;i++){if(f1<f2){hi=x2;x2=x1;f2=f1;x1=hi-gr*(hi-lo);f1=await f(x1)}else{lo=x1;x1=x2;f1=f2;x2=lo+gr*(hi-lo);f2=await f(x2)}}
   const d0=f1<f2?x1:x2;if(await f(d0)>target*4)return false;
   let s=sc,k=0;while(await f(d0+s)<target&&k++<14)s*=2;
-  let a=0,b=s;for(let i=0;i<8;i++){const m=(a+b)/2;if(await f(d0+m)<target)a=m;else b=m}
-  await f(d0+(a+b)/2);return true;
+  let a=0,b=s,fbv=await f(d0+b);
+  for(let i=0;i<24&&fbv>target*1.25;i++){const m=(a+b)/2,fm=await f(d0+m);if(fm<target)a=m;else{b=m;fbv=fm}}
+  await f(d0+b);return true;
 }
 async function planTransfer(){
-  const A=BI[LB],B=BI[OB.tgt],W2=2*Math.PI;BD.forEach(b=>b.ph=b.ph0);OB.pump=null;OB.route='';OB.via=null;OB.Q=null;
+  const A=BI[LB],B=BI[OB.tgt],W2=2*Math.PI;BD.forEach(b=>b.ph=b.ph0);OB.pump=null;OB.route='';OB.via=null;OB.Q=null;pumpCache.clear();
   const rel=B.par===A.n?'moon':A.par===B.n?'parent':(A.par&&A.par===B.par)?'sib':(A.par==='Sun'&&B.par&&B.par!=='Sun')?'hmoon':null;
   if(!rel)return'Launch from a planet, or pick a target in the same system — e.g. Earth to Moon, Saturn or Titan, or Io to Europa';
   const r0=A.R+OB.h*1000,rcap=B.R+defH(B)*1000,nu=vi=>Math.acos(-1/(1+r0*vi*vi/A.GM))/D;
@@ -694,7 +773,7 @@ async function planTransfer(){
     const mu=B.GM,r1=A.a,at=(r1+rcap)/2,vd=Math.sqrt(mu*(2/r1-1/at)),vi=W2*r1/A.P-vd,p=((270-nu(vi))%360+360)%360;
     OB.v=Math.sqrt(vi*vi+2*A.GM/r0)/1000;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=1.5*Math.PI*Math.sqrt(at**3/mu);
     if(!await aim(e=>{OB.p=((p+e/D)%360+360)%360},B,rcap,.35,.01))return'Couldn’t plan this transfer automatically — try another launch body or target';
-    OB.route=A.n+' → '+B.n;OB.Q=B.n;OB.view='Target';return null;
+    OB.route=A.n+' → '+B.n;OB.Q=B.n;if(!OB.userView)OB.view='Follow';return null;
   }
   const Q=rel==='moon'?A:rel==='sib'?BI[A.par]:BI.Sun,PB=rel==='hmoon'?BI[B.par]:B;
   on[Q.n]=true;on[PB.n]=true;on[B.n]=true;
@@ -705,6 +784,7 @@ async function planTransfer(){
   }
   if(alts)seq=alts[0];
   (alts||[seq]).forEach(sq=>sq.forEach(b=>on[b.n]=true));
+  if(A.n==='Earth')on.Moon=true;
 
   const mu=Q.GM,rA=rel==='moon'?r0:A.a;let prev=rA,ttrSum=0,vf,p=0;
   seq.forEach((T,i)=>{const aim_=T.a*(T.a>=prev?1.03:.97),at=(prev+aim_)/2;
@@ -712,9 +792,11 @@ async function planTransfer(){
       if(rel==='moon')vf=vd;else{const vA=W2*A.a/A.P,vi=Math.abs(vd-vA),out=vd>vA;vf=Math.sqrt(vi*vi+2*A.GM/r0);p=((out?90:270)-nu(vi)+720)%360}}
     ttrSum+=Math.PI*Math.sqrt(at**3/mu);prev=T.a});
   let K=A.par==='Sun'?(rel==='moon'?2:3):0;
-  const RA=[4,16,64],vell=ra=>Math.sqrt(2*A.GM*ra/(r0*(r0+ra))),Sp=[];for(let i=0;i<K;i++)Sp.push(vell(r0*RA[i]));
+  const RA=[7,14,22],vell=ra=>Math.sqrt(2*A.GM*ra/(r0*(r0+ra))),Sp=[],RAa=[];
+  for(let i=0;i<K;i++){let ra=r0*RA[i];if(rel==='moon')ra=Math.min(ra,B.a*.75);if(RAa.length&&ra<RAa[RAa.length-1]*1.2)break;RAa.push(ra)}
+  K=RAa.length;for(let i=0;i<K;i++)Sp.push(vell(RAa[i]));
   while(K>0&&vf<=Sp[K-1]*1.02){K--;Sp.pop()}
-  let tdep=0;for(let i=0;i<K;i++)tdep+=W2*Math.sqrt((r0*(1+RA[i])/2)**3/A.GM);
+  let tdep=0;for(let i=0;i<K;i++)tdep+=W2*Math.sqrt(((r0+RAa[i])/2)**3/A.GM);
   if(rel!=='moon'&&mov(A))p=(p+W2*tdep/A.P/D)%360;
   OB.v=(K?Sp[0]:vf)/1000;OB.pump=K?[...Sp.slice(1),vf]:null;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=tdep+1.7*ttrSum;
   const ttrOf=sq=>{let pr=rA,sum=0;sq.forEach(T=>{const am=T.a*(T.a>=pr?1.03:.97),at=(pr+am)/2;sum+=Math.PI*Math.sqrt(at**3/mu);pr=T.a});return sum};
@@ -755,7 +837,7 @@ async function planTransfer(){
   for(const sq of(alts||[seq])){seq=sq;BD.forEach(b=>b.ph=b.ph0);OB.tmax=tdep+1.7*ttrOf(sq);msg=await runSeq();if(!msg)break}
   if(msg)return msg;
   OB.Q=Q.n;OB.route=A.n+' → '+seq.map(b=>b.n+(b===PB?'':' (gravity assist)')).join(' → ')+(rel==='hmoon'?' → '+B.n:'')+(K?' · '+K+' orbit-raising burns at perigee':'');
-  OB.view=rel==='moon'?'Local':'System';return null;
+  if(!OB.userView)OB.view='Follow';return null;
 }
 const OC=[['v','Launch speed','km/s',0,15,.01],['a','Launch angle','°',0,90,1],['h','Launch height','km',0,2000,1],['p','Launch point','°',0,360,1]];
 const lim=()=>{const L=BI[LB];return{v:Math.ceil(Math.sqrt(2*L.GM/L.R)*1.6/100)/10,h:Math.max(100,Math.round(L.R/1000*6.5/50)*50)}};
@@ -777,7 +859,7 @@ function oresults(){
   if(ob.close)it.push(['Closest to '+ob.close.n,f(ob.close.alt/1000,0),'km']);
   $('ores').innerHTML=it.map(([l,v,u,w,fm])=>'<div class="'+(w?'w2 fd':'')+'"><small>'+l+'</small><b'+(w?' style="font-size:19px"':'')+'>'+v+'</b><i>'+u+'</i>'+(fm?'<em>'+fm+'</em>':'')+'</div>').join('');
 }
-function orbRestart(){orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;capAt=0;bnIdx=0;oresults();icon()}
+function orbRestart(){orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;paceSt='';domKeep='';oresults();icon()}
 function osync(){
   const m=lim();const ge=$('ogeo');if(ge)ge.hidden=LB!=='Earth';
   OC.forEach(([k,,,mn,mx])=>{const n=$('on'+k),r=$('or'+k),M=k==='v'?m.v:k==='h'?m.h:mx;
@@ -810,7 +892,7 @@ function togBody(n){
 function buildFocus(){
   const c=$('ofc');if(!c)return;c.innerHTML='';
   BD.filter(b=>on[b.n]).forEach(b=>{const e=document.createElement('button');e.textContent=b.n;e.className=OB.view==='Focus'&&OB.focus===b.n?'on':'';
-    e.onclick=()=>{OB.focus=b.n;OB.view='Focus';VO=null;ZO=1;PN[0]=PN[1]=0;osync()};c.appendChild(e)});
+    e.onclick=()=>{OB.focus=b.n;OB.view='Focus';OB.userView=true;VO=null;ZO=1;PN[0]=PN[1]=0;osync()};c.appendChild(e)});
 }
 function buildBodies(){
   $('obd').innerHTML='';
@@ -827,7 +909,7 @@ function buildLaunch(){
   b.onclick=()=>{clearTgt();OB.pump=null;if(OB.h<=0)OB.h=defH(BI[LB]);OB.a=0;OB.v=Math.min(lim().v,+(vcOf()*m/1000).toFixed(2));orbRestart();osync()};$('opr').appendChild(b)});
 {const b=document.createElement('button');b.id='ogeo';b.textContent='Geostationary';b.hidden=true;
   b.onclick=()=>{clearTgt();OB.pump=null;OB.a=0;OB.h=35786;OB.v=+(vcOf()/1000).toFixed(3);orbRestart();osync()};$('opr').appendChild(b)}
-[['Local'],['Target'],['System'],['Follow']].forEach(([n])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{OB.view=n;VO=null;ZO=1;PN[0]=PN[1]=0;osync()};$('ovw').appendChild(b)});
+[['Local'],['Target'],['System'],['Follow']].forEach(([n])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>{OB.view=n;OB.userView=true;VO=null;ZO=1;PN[0]=PN[1]=0;osync()};$('ovw').appendChild(b)});
 [['Auto',0],['1 day',86400],['30 days',2.592e6],['1 year',3.156e7],['10 years',3.156e8]].forEach(([n,d])=>{
   const b=document.createElement('button');b.textContent=n;b.dataset.d=d;b.onclick=()=>{OB.dur=d;orbRestartBusy();osync()};$('odu').appendChild(b)});
 [['Prograde',1],['Retrograde',-1]].forEach(([n,d])=>{const b=document.createElement('button');b.textContent=n;b.dataset.d=d;b.onclick=()=>{clearTgt();OB.pump=null;OB.dir=d;orbRestart();osync()};$('odr').appendChild(b)});
@@ -875,9 +957,10 @@ function clipSeg(x0,y0,x1,y1){
 }
 function mkPoly(){
   let px=0,py=0,has=false,conn=false;
-  return{add(x,y){
+  return{add(x,y,force){
     if(!isFinite(x+y)){has=false;return}
     if(!has){px=x;py=y;has=true;conn=false;return}
+    if(!force&&Math.abs(x-px)<1.2&&Math.abs(y-py)<1.2)return;
     const s=clipSeg(px,py,x,y);
     if(s){if(!conn||s[4]>0)ctx.moveTo(s[0],s[1]);ctx.lineTo(s[2],s[3]);conn=s[5]===1}else conn=false;
     px=x;py=y;
@@ -901,15 +984,21 @@ function drawOrbit(){
   const L=BI[LB],B=ob.tgtN?BI[ob.tgtN]:null,vw=OB.view==='Target'&&!B?'Local':OB.view,sys=vw==='System',tg=vw==='Target',flw=vw==='Follow',foc=vw==='Focus',rf=flw||foc;
   const padT=W<500?72:78,padB=W<500?84:96,ac=css('--accent'),XF=ob.xfer,q=atT(otm),E=BD.filter(b=>on[b.n]),kp=ob.kep,vL=vel(L,otm);
   const aH=Math.max(Hh-padT-padB,80),aW=Math.max(W-80,80),mD=Math.max(Math.min(W-60,aH),80),n=ob.xs.length,t1=ob.t1;
-  const viaStage=!!(XF&&t1!=null&&otm>=t1&&otm<XF.t),post=XF?otm>=XF.t:!!(kp&&otm>ob.Ts),pre=!viaStage&&!post;
-  const capT=XF?(t1!=null?t1:XF.t):null,capd=capT!=null&&otm>=capT,kcur=post?kp:viaStage?ob.kep1:null;
+  const viaStage=!!(XF&&t1!=null&&otm>=t1&&otm<XF.t),post=XF?otm>=XF.t:!!(kp&&otm>ob.Ts0),pre=!viaStage&&!post;
+  const capT=XF?(t1!=null?t1:XF.t):null,capd=capT!=null&&otm>=capT;let kcur=post?kp:viaStage?ob.kep1:null;
+  if(ob.cont&&post&&kcur){const Pq=BI[ob.cont.Pn],pP=pos(Pq,otm),vP=vel(Pq,otm),k2=mkKep(Pq,otm,q.x-pP[0],q.y-pP[1],q.vx+vL[0]-vP[0],q.vy+vL[1]-vP[1]);if(k2)kcur=k2}
   let dom=L,dd=1,vrel=0;
   if(foc)dom=OB.focus&&on[OB.focus]?BI[OB.focus]:(B||L);
   else if(flw){
-    if(XF&&otm>=ob.tdep)dom=(ob.via&&otm<XF.t)?ob.via:B;
+    if(XF&&otm>=ob.tdep){
+      if(ob.pace&&otm<ob.pace.capT){let bdist=Infinity,bb=null,dK=Infinity;for(const cb of [L,...ob.pace.fly.map(f=>BI[f.n]),ob.via||B]){const pq=pos(cb,otm),dq=Math.hypot(q.x-pq[0],q.y-pq[1]);if(dq<bdist){bdist=dq;bb=cb}if(cb.n===domKeep)dK=dq}dom=(domKeep&&dK<Infinity&&bdist>=.75*dK)?BI[domKeep]:bb;domKeep=dom.n}
+      else dom=(ob.via&&otm<XF.t)?ob.via:B;
+    }
     else{let bk=-1;for(const b of E){const p=pos(b,otm),d=Math.max(Math.hypot(q.x-p[0],q.y-p[1]),1),k=b.GM/(d*d);if(k>bk){bk=k;dom=b}}}
   }
   if(rf){const Dp=pos(dom,otm),vD=vel(dom,otm);dd=Math.max(Math.hypot(q.x-Dp[0],q.y-Dp[1]),1);vrel=Math.hypot(q.vx+vL[0]-vD[0],q.vy+vL[1]-vD[1])}
+  let ddS=dd;
+  if(flw){const tF=Math.min(otm+Math.max(rateCur,0)*.45,ob.Ts),qF=atT(tF),pF=pos(dom,tF),ddF=Math.max(Math.hypot(qF.x-pF[0],qF.y-pF[1]),1);ddS=Math.min(dd,ddF);if(dom===L)ddS=Math.max(ddS,20*ob.r0)}
   const pumping=flw&&ob.K>0&&otm<ob.tdep;let pk=null,pidx=0;
   if(pumping){for(let j=0;j<ob.K;j++)if(otm>=ob.pstart[j])pidx=j;pk=ob.pumpK[pidx]}
   let fb=L;
@@ -922,20 +1011,27 @@ function drawOrbit(){
   if(pumping){const ec=ecOf(pk);tx0=ec[0];ty0=ec[1];st=.5*mD/(pk.a*1.12)}
   else if(foc){const kids=E.filter(b=>b.par===dom.n);st=.42*mD/(kids.length?Math.max(...kids.map(b=>b.a))*1.15:dom.R*30)}
   else if(flw){
-    const sD=.4*mD/Math.max(dd*1.15,dom.R*1.3),sC=Math.min(sD,Math.max(150/(Math.max(vrel,1)*Math.max(rateCur,1e-6)),22/dom.R));
+    const sD=.4*mD/Math.max(ddS*1.15,dom.R*1.3),sC=Math.min(sD,Math.max(150/(Math.max(vrel,1)*Math.max(rateCur,1e-6)),22/dom.R));
     const orb=kcur&&kcur.P===fb;orbBlend+=((orb&&(capAt===0||nowT-capAt>2500)?1:0)-orbBlend)*Math.min(1,dtF*3);
-    const ec=orb?ecOf(kcur):[0,0],ub=orbBlend;
-    tx0=(1-ub)*satF[0]+ub*ec[0];ty0=(1-ub)*satF[1]+ub*ec[1];satLock=ub<.5;
-    st=orb||ub>.001?Math.exp((1-ub)*Math.log(sC)+ub*Math.log(.5*mD/(Math.max(orb?kcur.a:dom.R,1)*1.12))):sC;
+    const ub=orbBlend;
+    tx0=satF[0];ty0=satF[1];satLock=true;
+    st=orb||ub>.001?Math.exp((1-ub)*Math.log(sC)+ub*Math.log(.231*mD/Math.max(orb?kcur.a:dom.R,1))):sC;
   }else{
     const bb=sys?ob.bbS:tg?(XF&&otm>=XF.t?ob.bbP:ob.bbT):ob.bbL,[bx0,bx1,by0,by1]=bb,mn=sys?1e6:.004*Cb.R,bw=Math.max(bx1-bx0,mn),bh=Math.max(by1-by0,mn);
     st=Math.min(aW/bw,aH/bh);tcx=(bx0+bx1)/2;tcy=(by0+by1)/2;
   }
   st*=ZO;if(!(isFinite(st)&&st>0))st=VO&&VO.s>0?VO.s:1e-9;
-  if(!VO)VO={s:st,cx:tcx,cy:tcy,ox:tx0,oy:ty0};
+  const fbn=sys?'':fb.n;
+  if(!VO)VO={s:st,cx:tcx,cy:tcy,ox:tx0,oy:ty0,fbn,sx:satF[0],sy:satF[1]};
   else{
-    const rt=st/VO.s,k=1-Math.exp(-(rt>1?(rf?.8:2.5):(rf?3:2.5))*dtF);VO.s*=Math.pow(rt,k);
-    const kc=1-Math.exp(-(satLock?7:1.4)*dtF);VO.ox+=(tx0-VO.ox)*kc;VO.oy+=(ty0-VO.oy)*kc;
+    if(VO.fbn!==fbn){
+      const oo=VO.fbn&&BI[VO.fbn]?pos(BI[VO.fbn],otm):[0,0],ddx=oo[0]-Fc[0],ddy=oo[1]-Fc[1];
+      VO.ox+=ddx;VO.oy+=ddy;VO.sx+=ddx;VO.sy+=ddy;VO.fbn=fbn;
+    }
+    if(satLock){VO.ox+=satF[0]-VO.sx;VO.oy+=satF[1]-VO.sy}
+    VO.sx=satF[0];VO.sy=satF[1];
+    const lr=Math.log(st/VO.s),lam=rf?2.0:2.5,stp=lr*(1-Math.exp(-lam*dtF)),mxz=(rf?2.4:3)*dtF;VO.s*=Math.exp(Math.max(-mxz,Math.min(mxz,stp)));
+    const err=Math.hypot(tx0-VO.ox,ty0-VO.oy)*VO.s,kc=1-Math.exp(-(satLock?(err<120?7:2.2):1.4)*dtF);VO.ox+=(tx0-VO.ox)*kc;VO.oy+=(ty0-VO.oy)*kc;
     const k3=1-Math.exp(-3*dtF);VO.cx+=(tcx-VO.cx)*k3;VO.cy+=(tcy-VO.cy)*k3;
   }
   const s=VO.s,ym=padT+aH/2,pn=flw?[0,0]:PN;OYM=ym;
@@ -951,26 +1047,29 @@ function drawOrbit(){
     const w0=pos(ev.b,ev.t),pf0=sys?[0,0]:pos(fb,ev.t),gx=X(w0[0]-pf0[0]),gy=Y(w0[1]-pf0[1]),gr=Math.max(ev.b.R*s,5);
     if(vis(gx,gy)&&gr<2500){ctx.setLineDash([4,4]);ctx.strokeStyle=ev.b.c;ctx.lineWidth=2;ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(gx,gy,gr,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;label(ev.b.n+' at arrival',gx,gy-gr-12)}
   }
+  const scr={},combo={},hideL={};
+  E.forEach(b=>{const c=F(pos(b,otm));scr[b.n]=[X(c[0]),Y(c[1])]});
+  E.forEach(b=>{if(b.par&&b.par!=='Sun'&&scr[b.par]){const a=scr[b.n],pp=scr[b.par];if(Math.hypot(a[0]-pp[0],a[1]-pp[1])<22){hideL[b.n]=1;(combo[b.par]=combo[b.par]||[]).push(b.n)}}});
   [...E].sort((a,b)=>b.R-a.R).forEach(b=>{
     const c=F(pos(b,otm)),px=X(c[0]),py=Y(c[1]),rp=b.R*s,rd=Math.max(rp,3);
     if(b===Cb&&!sys){ctx.beginPath();circPts(px,py,rp+Math.min(100e3*s,40),true);ctx.fillStyle=b.c;ctx.globalAlpha=.18;ctx.fill();ctx.globalAlpha=1}
     ctx.beginPath();circPts(px,py,rd,true);ctx.fillStyle=b.c;ctx.fill();
     if(rp>8){ctx.beginPath();circPts(px,py,rd,false);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.14)';ctx.stroke()}
-    if((rp<28||foc)&&vis(px,py))label(b.n,px,py-Math.min(rd,2000)-11);
+    if((rp<28||foc)&&vis(px,py)&&!hideL[b.n])label(combo[b.n]?b.n+' + '+combo[b.n].join(', '):b.n,px,py-Math.min(rd,2000)-11);
   });
   if(vw==='Local'&&ob.r0*s>4){ctx.setLineDash([3,7]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.5;ctx.lineWidth=1.2;ctx.beginPath();circPts(X(0),Y(0),ob.r0*s,false);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
   const ellK=(k,tref,al)=>{const Pp=pos(k.P,tref),Rf=sys?[0,0]:pos(fb,tref),P=mkPoly();ctx.globalAlpha=al;ctx.beginPath();
     for(let i=0;i<=320;i++){const z=ellPt(k,2*Math.PI*i/320);P.add(X(Pp[0]+z[0]-Rf[0]),Y(Pp[1]+z[1]-Rf[1]))}ctx.stroke()};
-  const iC=capT!=null?idxT(capT):n-1;
+  const iC=capT!=null?idxT(capT):(kp?idxT(ob.Ts0):n-1);
   ctx.lineWidth=2;ctx.strokeStyle=css('--axis');ctx.setLineDash([2,6]);
   if(pumping){ellK(pk,otm,.8);if(ob.pumpK[pidx+1])ellK(ob.pumpK[pidx+1],otm,.4)}
   if(pre){
-    const i0=q.i+1,i1=iC,sk=Math.max(1,Math.floor((i1-i0)/700)),P=mkPoly();
-    ctx.globalAlpha=.8;ctx.beginPath();P.add(X(satF[0]),Y(satF[1]));
-    for(let i=i0;i<=i1;i+=sk){const r=pf(i);P.add(X(r[0]),Y(r[1]))}
-    if(i1>=i0){const r=pf(i1);P.add(X(r[0]),Y(r[1]))}
+    const i0=q.i+1,i1=iC,SK=Math.max(1,Math.floor(n/16000)),P=mkPoly();
+    ctx.globalAlpha=.8;ctx.beginPath();P.add(X(satF[0]),Y(satF[1]),true);
+    for(let i=Math.ceil(i0/SK)*SK;i<=i1;i+=SK){const r=pf(i);P.add(X(r[0]),Y(r[1]))}
+    if(i1>=i0){const r=pf(i1);P.add(X(r[0]),Y(r[1]),true)}
     ctx.stroke();
-    if(kp&&XF&&!pumping)ellK(kp,ob.Ts,.45);
+    if(kp&&XF&&!pumping)ellK(kp,ob.Ts0,.45);
   }else if(kcur)ellK(kcur,otm,.85);
   ctx.setLineDash([]);ctx.globalAlpha=1;
   // Kepler's second law: equal areas in equal times
@@ -984,19 +1083,20 @@ function drawOrbit(){
     }
     ctx.globalAlpha=1;
   }
-  const iS=Math.min(q.i,iC),sk2=Math.max(1,Math.floor(iS/900)),PS=mkPoly();
-  ctx.lineWidth=3;ctx.strokeStyle=ac;ctx.beginPath();
+  const iS=Math.min(q.i,iC),sk2=Math.max(1,Math.floor(n/16000)),PS=mkPoly();
+  const histHide=(post||viaStage)&&kcur&&kcur.P===fb;
+  if(!histHide){ctx.lineWidth=3;ctx.strokeStyle=ac;ctx.beginPath();
   for(let i=0;i<=iS;i+=sk2){const r=pf(i);PS.add(X(r[0]),Y(r[1]))}
-  {const r=pf(iS);PS.add(X(r[0]),Y(r[1]))}
-  if(pre)PS.add(X(satF[0]),Y(satF[1]));
-  ctx.stroke();
+  {const r=pf(iS);PS.add(X(r[0]),Y(r[1]),true)}
+  if(pre)PS.add(X(satF[0]),Y(satF[1]),true);
+  ctx.stroke()}
   ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--text');ctx.lineWidth=2;
   if(!capd){const lp=mpf(ob.xs[0],ob.ys[0],ob.ts[0]),lx=X(lp[0]),ly=Y(lp[1]);if(vis(lx,ly)){ctx.beginPath();ctx.arc(lx,ly,4.5,0,7);ctx.fill();ctx.stroke();label('Launch',lx+34,ly-4)}}
   let ri=0;const nr=ob.burns.filter(b=>b.kind==='Orbit raise'&&b.t<=otm).length;
   for(const b of ob.burns){if(b.kind==='Orbit raise')ri++;if(otm<b.t||(capd&&!/Capture/.test(b.kind)))continue;const bm=mpf(b.x,b.y,b.t),bx=X(bm[0]),by=Y(bm[1]);if(!vis(bx,by))continue;const big=/Capture|Departure/.test(b.kind),r_=big?7:5.5;
     ctx.beginPath();ctx.moveTo(bx,by-r_);ctx.lineTo(bx+r_,by);ctx.lineTo(bx,by+r_);ctx.lineTo(bx-r_,by);ctx.closePath();ctx.fill();ctx.stroke();
     if(big)label(b.kind,bx,/Capture/.test(b.kind)?by+22:by-18);else if(b.kind==='Orbit raise'&&rf&&ri===nr)label('Burn '+ri,bx,by+18)}
-  if(kcur&&!pumping){
+  if(kcur&&!pumping&&kcur.a*s>45){
     const k=kcur,Pp=pos(k.P,otm),Rf=sys?[0,0]:pos(fb,otm);
     [[0,'Pe',k.a*(1-k.e)],[Math.PI,'Ap',k.a*(1+k.e)]].forEach(([Ev,nm,rr])=>{const z=ellPt(k,Ev),ax=X(Pp[0]+z[0]-Rf[0]),ay=Y(Pp[1]+z[1]-Rf[1]);if(!vis(ax,ay))return;
       ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--axis');ctx.lineWidth=2;ctx.beginPath();ctx.arc(ax,ay,4,0,7);ctx.fill();ctx.stroke();
@@ -1014,18 +1114,34 @@ function drawOrbit(){
   $('live').innerHTML=[['t',fmtT(otm),''],['alt',f(al/1000,al<1e6?1:0),'km'],['v',f(sp/1000),'km/s'],['rate',fmtT(rateCur||simRate(otm)*spdO/4),'/ s']].map(([l,v,u])=>'<div><small>'+l+'</small><b>'+v+'<span style="color:var(--muted);font-weight:400;font-size:11px"> '+u+'</span></b></div>').join('');
   $('tl').textContent=fmtT(otm);$('sc').value=Math.min(otm/ob.Tend,1)*1000;
 }
+let paceSt='',paceHold=0,cap1Seen=false,domKeep='';
 function orbStep(dt){
   if(!ob||!oplay)return;
-  const tr=simRate(otm)*spdO/4;
-  if(tr<=0){otm=ob.Ts;oplay=false;icon();landAt=performance.now();toast(ob.hit?(ob.hit===BI[LB]?'Impact — '+f(ob.range/1000,0)+' km downrange':'Impact on '+ob.hit.n):ob.type);return}
-  rateCur=rateCur>0?Math.exp(Math.log(rateCur)+(Math.log(tr)-Math.log(rateCur))*Math.min(1,dt*4)):tr;
+  if(ob.cont&&otm+ob.kep.per*.4>ob.Ts)extendOb(otm+ob.kep.per*.9);
+  const tr=simRate(otm+Math.max(rateCur,0)*.12)*spdO/4;
+  if(tr<=0){otm=ob.Ts;oplay=false;icon();landAt=performance.now();toast(ob.hit?(ob.hit===BI[LB]?'Impact — '+f(ob.range/1000,0)+' km downrange':'Impact on '+ob.hit.n):ob.type);paceUi('');return}
+  const lt=Math.log(tr),lc=rateCur>0?Math.log(rateCur):lt-.9,d=lt-lc;
+  rateCur=Math.exp(lc+Math.max(-3*dt,Math.min(3*dt,d*Math.min(1,5*dt))));
   otm+=dt*rateCur;
+  const P=ob.pace,pump=ob.K>0&&otm<ob.tdep,cap=!!P&&otm>=P.tdep&&otm<P.capT&&(P.capT-otm)/P.tau<30*P.rF,orbit=ob.kep&&otm>ob.Ts0;
+  let flyN=null;if(P&&otm>=P.tdep&&otm<P.capT){let base=Infinity;for(const e of P.ev)if(!P.fly.some(f=>f.t===e.t))base=Math.min(base,Math.max(e.rF,Math.abs(otm-e.t)/e.tau));for(const f of P.fly){if(Math.max(f.rF,Math.abs(otm-f.t)/f.tau)<.5*base)flyN=f.n}}
+  let st=flyN?'fly '+flyN:d>.22?'up':d<-.22?'down':pump?'pump':orbit?'orbit':cap?'cap':'cruise';
+  const nw=performance.now();if(st!==paceSt&&nw>paceHold){paceSt=st;paceHold=nw+1300}
+  paceUi(paceSt);
   while(bnIdx<ob.burns.length&&otm>=ob.burns[bnIdx].t){const bb=ob.burns[bnIdx++];if(bb.kind==='Orbit raise')toast('Orbit-raising burn at perigee · '+Math.round(bb.dv)+' m/s');else if(bb.kind==='Departure burn')toast('Departure burn — leaving Earth orbit · '+Math.round(bb.dv)+' m/s')}
+  if(ob.t1!=null&&!cap1Seen&&otm>=ob.t1){cap1Seen=true;capAt=performance.now()}
   if(ob.xfer&&!capSeen&&otm>=ob.xfer.t){capSeen=true;capAt=performance.now();toast('Captured — now orbiting '+OB.tgt)}
 }
+function paceUi(st){
+  const e=$('pace');if(!e)return;
+  if(!st||mode!=='orbit'){e.hidden=true;return}
+  const fl=st.startsWith('fly ')?st.slice(4):null;
+  const m=fl?['Slowing down for the '+fl+' slingshot','Gravity assist · not real time']:{up:['Speeding up the simulation','Time-lapse, not real time'],down:['Slowing down the simulation','Easing into slow motion'],pump:['Orbit-raising shown in time-lapse','Not real time'],cruise:['Cruise shown in time-lapse','Not real time'],cap:['Slow motion for the capture','Not real time'],orbit:['Simulated orbit','One orbit shown in about 10 s']}[st];
+  e.hidden=false;$('pace1').textContent=m[0];$('pace2').textContent=m[1]+' · 1 s = '+fmtT(rateCur||1);
+}
 const ppP=$('pp').onclick,scP=$('sc').oninput;
-$('pp').onclick=()=>{if(mode!=='orbit')return ppP();if(!ob.kep&&otm>=ob.Ts)otm=0;oplay=!oplay;icon()};
-$('sc').oninput=e=>{if(mode!=='orbit')return scP(e);oplay=false;otm=e.target.value/1000*ob.Tend;capSeen=!!ob.xfer&&otm>=ob.xfer.t;capAt=0;bnIdx=ob.burns.filter(b=>b.t<=otm).length;icon()};
+$('pp').onclick=()=>{if(mode!=='orbit')return ppP();if(!ob.kep&&otm>=ob.Ts)otm=0;oplay=!oplay;if(!oplay)paceUi('');icon()};
+$('sc').oninput=e=>{if(mode!=='orbit')return scP(e);oplay=false;paceUi('');otm=e.target.value/1000*ob.Tend;capSeen=!!ob.xfer&&otm>=ob.xfer.t;cap1Seen=ob.t1!=null&&otm>=ob.t1;capAt=0;bnIdx=ob.burns.filter(b=>b.t<=otm).length;icon()};
 function oz(k,px,py){
   const nz=Math.min(Math.max(ZO*k,.005),5000);k=nz/ZO;ZO=nz;if(VO)VO.s*=k;
   PN[0]=px-W/2-(px-W/2-PN[0])*k;PN[1]=py-OYM-(py-OYM-PN[1])*k;
@@ -1046,7 +1162,7 @@ cv.addEventListener('pointermove',e=>{
 cv.addEventListener('wheel',e=>{if(mode!=='orbit')return;e.preventDefault();const p=pt(e);oz(Math.exp(-e.deltaY*.0015),p[0],p[1])},{passive:false});
 $('tzi').onclick=()=>oz(1.5,W/2,OYM);$('tzo').onclick=()=>oz(1/1.5,W/2,OYM);
 $('tzr').onclick=()=>{ZO=1;PN[0]=PN[1]=0;VO=null};
-$('rpl').onclick=()=>{if(mode==='orbit'){otm=0;oplay=true;rateCur=0;capSeen=false;capAt=0;bnIdx=0}else{tm=0;playing=R.T>0}icon()};
+$('rpl').onclick=()=>{if(mode==='orbit'){otm=0;oplay=true;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;domKeep=''}else{tm=0;playing=R.T>0}icon()};
 $('kp2').onclick=e=>{OB.kep2=!OB.kep2;e.target.classList.toggle('on',OB.kep2)};
 calc();results();sync();icon();requestAnimationFrame(loop);
 </script>
