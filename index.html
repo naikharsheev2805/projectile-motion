@@ -75,7 +75,7 @@ aside.col .chev svg{transform:rotate(180deg)}
 aside.col{padding-bottom:0;overflow:hidden;height:calc(36px + env(safe-area-inset-bottom,0px))}
 aside.col>:not(.grab){display:none}
 .res div.fd{border-color:var(--accent)}.res div.fd small{color:var(--accent)}.res div.fd small::after{content:" · found"}
-.toast{position:absolute;left:50%;top:72px;transform:translate(-50%,-8px);opacity:0;pointer-events:none;background:var(--text);color:var(--bg);padding:9px 18px;border-radius:999px;font-size:13.5px;transition:opacity .25s,transform .25s;white-space:nowrap;z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.toast{position:absolute;left:50%;top:72px;transform:translate(-50%,-8px);opacity:0;pointer-events:none;background:var(--text);color:var(--bg);padding:9px 18px;border-radius:18px;font-size:13.5px;line-height:1.4;text-align:center;width:max-content;max-width:min(92%,420px);transition:opacity .25s,transform .25s;white-space:normal;z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .dock .sp svg{width:15px;height:15px;fill:none;stroke:var(--text);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .dock .sp{width:auto;height:30px;border-radius:15px;padding:0 11px;background:var(--panel);color:var(--text);font:12px ui-monospace,Menlo,monospace;flex:none}
@@ -162,7 +162,7 @@ select:focus{border-color:var(--accent)}
     <h2>Simulate for</h2>
     <div class="chips" id="odu"></div>
   </section>
-  <p class="ver">v2.10.0 · build G16</p>
+  <p class="ver">v2.11.1 · build G18</p>
 </aside>
 <main>
   <canvas id="cv"></canvas>
@@ -462,7 +462,7 @@ fsb.onclick=()=>{document.fullscreenElement?document.exitFullscreen():de.request
 document.addEventListener('fullscreenchange',()=>fsb.classList.toggle('on',!!document.fullscreenElement));
 let tt,aimed=false;
 const GC=['#4B7BB5','#5E8C61','#8B6BB1','#C99A2E'];
-const toast=m=>{const e=$('toast');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),2800)};
+const toast=m=>{const e=$('toast');e.textContent=m;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),Math.max(2800,m.length*55))};
 function newTgt(){tgt=Math.round(25+Math.random()*125);toast('Target at '+tgt+' m — aim and launch')}
 function landed(){
   landAt=performance.now();if(!tgt)return;
@@ -529,7 +529,7 @@ const mov=b=>!!(b.par&&on[b.par]&&on[b.n]);
 const pos=(b,t)=>{if(!b.par)return[0,0];const q=pos(BI[b.par],t),an=b.ph+(mov(b)?6.283185307179586*t/b.P:0);return[q[0]+b.a*Math.cos(an),q[1]+b.a*Math.sin(an)]};
 const vel=(b,t)=>{if(!mov(b))return[0,0];const q=vel(BI[b.par],t),w=6.283185307179586/b.P,an=b.ph+w*t;return[q[0]-b.a*w*Math.sin(an),q[1]+b.a*w*Math.cos(an)]};
 const mm=a=>a.reduce((p,c)=>[Math.min(p[0],c),Math.max(p[1],c)],[Infinity,-Infinity]);
-const capRa=(B,rr)=>{const hill=B.a*Math.cbrt(B.GM/(3*BI[B.par].GM));return Math.max(Math.min(25*B.R,.3*hill),rr*3)};
+const capRa=(B,rr)=>{const hill=B.a*Math.cbrt(B.GM/(3*BI[B.par].GM)),cap=(B.par==='Sun'?.3:.08)*hill;return Math.max(Math.max(Math.min(25*B.R,cap),Math.min(3*rr,cap)),rr*1.05)};
 const SOI=T=>T.a*Math.pow(T.GM/BI.Sun.GM,.4);
 function basis(L,p,dir){
   const vb=vel(L,0);let hh=[-1,0];if(mov(L)){const s=Math.hypot(vb[0],vb[1]);hh=[vb[0]/s,vb[1]/s]}
@@ -593,10 +593,10 @@ function orbCalc(scan,TmaxOver,opts){
     const c=pumpCache.get(pkey);if(c){t=c.t;x=c.x;y=c.y;vx=c.vx;vy=c.vy;pIdx=K;tdep=c.t;openAll()}
   }
   for(let n=0;n<80000&&t<Tmax;n++){
-    let bd=0,bk=-1,rdm=Infinity;
-    const PS0=bp(t);for(let i=0;i<nE;i++){const q=PS0[i];if(!q)continue;const d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(d<rdm&&d<3*soi[i])rdm=d;if(k>bk){bk=k;bd=i}}
-    const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]);
-    const dt=Math.min(.004*Math.min(rd,rdm)/Math.max(rs,1),dcap*(1+(t-tdep)/tau),Tmax-t),px=x,py=y,pt=t;
+    let bd=0,bk=-1,rdm=Infinity,bn=-1;
+    const PS0=bp(t);for(let i=0;i<nE;i++){const q=PS0[i];if(!q)continue;const d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(d<rdm&&d<3*soi[i]){rdm=d;bn=i}if(k>bk){bk=k;bd=i}}
+    const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]),vn=bn>=0&&bn!==bd?vel(E[bn],t):vd,rsn=Math.hypot(vx-vn[0],vy-vn[1]);
+    const dt=Math.min(.004*rd/Math.max(rs,1),.004*rdm/Math.max(rsn,1),dcap*(1+(t-tdep)/tau),Tmax-t),px=x,py=y,pt=t;
     const a1=acc(x,y,t),x2=x+vx*dt/2,y2=y+vy*dt/2,vx2=vx+a1[0]*dt/2,vy2=vy+a1[1]*dt/2,a2=acc(x2,y2,t+dt/2);
     const x3=x+vx2*dt/2,y3=y+vy2*dt/2,vx3=vx+a2[0]*dt/2,vy3=vy+a2[1]*dt/2,a3=acc(x3,y3,t+dt/2);
     const x4=x+vx3*dt,y4=y+vy3*dt,vx4=vx+a3[0]*dt,vy4=vy+a3[1]*dt,a4=acc(x4,y4,t+dt);
@@ -647,7 +647,8 @@ function orbCalc(scan,TmaxOver,opts){
   if(via&&burned&&!hit){
     burn1=burned;burns.push(bmk(burn1.t,burn1.dv,'Planet capture burn',burn1.x,burn1.y));
     const k1=kep,t1=burn1.t,t2=t1+k1.per;kep1=k1;
-    for(let j=1;j<=200;j++){const tt=t1+k1.per*j/200,s_=keplerAt(k1,tt),pv=pos(via,tt),vv=vel(via,tt);rec(tt,pv[0]+s_.x,pv[1]+s_.y,vv[0]+s_.vx,vv[1]+s_.vy)}
+    {const NS=900,Es=solveE(k1.e,k1.M0),Ms=Es-k1.e*Math.sin(Es);
+      for(let j=1;j<=NS;j++){const Ej=Es+2*Math.PI*j/NS,tt=j===NS?t1+k1.per:t1+(Ej-k1.e*Math.sin(Ej)-Ms)/k1.n,s_=keplerAt(k1,tt),pv=pos(via,tt),vv=vel(via,tt);rec(tt,pv[0]+s_.x,pv[1]+s_.y,vv[0]+s_.vx,vv[1]+s_.vy)}}
     const s_=keplerAt(k1,t2),pv=pos(via,t2),vv=vel(via,t2),xx=pv[0]+s_.x,yy=pv[1]+s_.y,qB=pos(B,t2),vB=vel(B,t2),bx=xx-qB[0],by=yy-qB[1],wx=vv[0]+s_.vx-vB[0],wy=vv[1]+s_.vy-vB[1],rr=Math.hypot(bx,by);
     const rc=capRa(B,rr),ve2=Math.sqrt(B.GM*(2/rr-2/(rr+rc))),sg=(bx*wy-by*wx)>=0?1:-1,nwx=-sg*by/rr*ve2,nwy=sg*bx/rr*ve2;
     t=t2;burned={t:t2,dv:Math.hypot(nwx-wx,nwy-wy),x:xx,y:yy,rr,alt:rr-B.R,ra:rc,vrel:Math.hypot(wx,wy)};kep=mkKep(B,t2,bx,by,nwx,nwy);rec(t2,xx,yy,vB[0]+nwx,vB[1]+nwy);contS={x:xx,y:yy,vx:vB[0]+nwx,vy:vB[1]+nwy,t:t2};
@@ -695,6 +696,10 @@ function atT(t){
   t=Math.min(t,ob.Ts);
   const ts=ob.ts;let lo=0,hi=ts.length-1;
   while(hi-lo>1){const m=(lo+hi)>>1;if(ts[m]<=t)lo=m;else hi=m}
+  if(ob.kep1&&ob.t1!=null&&ob.xfer&&t>=ob.t1&&t<ob.xfer.t){
+    const k=ob.kep1,s=keplerAt(k,t),Pp=pos(k.P,t),vP=vel(k.P,t),x=Pp[0]+s.x,y=Pp[1]+s.y,qL=pos(BI[LB],t),vL=vel(BI[LB],t),B=ob.tgtN?BI[ob.tgtN]:null,qB=B?pos(B,t):null;
+    return{i:lo,x,y,rx:x-qL[0],ry:y-qL[1],vx:vP[0]+s.vx-vL[0],vy:vP[1]+s.vy-vL[1],tx:qB?x-qB[0]:0,ty:qB?y-qB[1]:0};
+  }
   const k=ts[hi]>ts[lo]?Math.min(1,Math.max(0,(t-ts[lo])/(ts[hi]-ts[lo]))):0,M=(a,b)=>a+(b-a)*k;
   const r={i:lo,x:M(ob.xs[lo],ob.xs[hi]),y:M(ob.ys[lo],ob.ys[hi]),rx:M(ob.rxs[lo],ob.rxs[hi]),ry:M(ob.rys[lo],ob.rys[hi]),vx:M(ob.vrx[lo],ob.vrx[hi]),vy:M(ob.vry[lo],ob.vry[hi])};
   if(ob.txs.length){r.tx=M(ob.txs[lo],ob.txs[hi]);r.ty=M(ob.tys[lo],ob.tys[hi])}
@@ -717,9 +722,9 @@ function extendOb(tTarget){
   let{x,y,vx,vy,t}=C,steps=0;
   while(t<tTarget&&steps<5000&&ob.xs.length<300000){
     steps++;
-    const PS0=bp(t);let bd=0,bk=-1,rdm=Infinity;
-    for(let i=0;i<nE;i++){const q=PS0[i],d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(d<rdm&&d<3*soi[i])rdm=d;if(k>bk){bk=k;bd=i}}
-    const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]),dt=.004*Math.min(rd,rdm)/Math.max(rs,1),px=x,py=y,pt=t;
+    const PS0=bp(t);let bd=0,bk=-1,rdm=Infinity,bn=-1;
+    for(let i=0;i<nE;i++){const q=PS0[i],d=Math.hypot(x-q[0],y-q[1]),k=E[i].GM/(d*d);if(d<rdm&&d<3*soi[i]){rdm=d;bn=i}if(k>bk){bk=k;bd=i}}
+    const qd=PS0[bd],vd=vel(E[bd],t),rd=Math.hypot(x-qd[0],y-qd[1]),rs=Math.hypot(vx-vd[0],vy-vd[1]),vn=bn>=0&&bn!==bd?vel(E[bn],t):vd,rsn=Math.hypot(vx-vn[0],vy-vn[1]),dt=Math.min(.004*rd/Math.max(rs,1),.004*rdm/Math.max(rsn,1)),px=x,py=y,pt=t;
     const a1=acc(x,y,t),x2=x+vx*dt/2,y2=y+vy*dt/2,vx2=vx+a1[0]*dt/2,vy2=vy+a1[1]*dt/2,a2=acc(x2,y2,t+dt/2);
     const x3=x+vx2*dt/2,y3=y+vy2*dt/2,vx3=vx+a2[0]*dt/2,vy3=vy+a2[1]*dt/2,a3=acc(x3,y3,t+dt/2);
     const x4=x+vx3*dt,y4=y+vy3*dt,vx4=vx+a3[0]*dt,vy4=vy+a3[1]*dt,a4=acc(x4,y4,t+dt);
@@ -733,7 +738,7 @@ function extendOb(tTarget){
     if(hasT){const qb=pos(B,t);ob.txs.push(x-qb[0]);ob.tys.push(y-qb[1])}
     if(hit){ob.hit=hit;ob.cont=null;ob.kep=null;ob.type='Impact on '+hit.n+' after '+fmtT(t-ob.Ts0)+' in orbit';break}
   }
-  ob.Ts=t;if(ob.cont){C.x=x;C.y=y;C.vx=vx;C.vy=vy;C.t=t}
+  ob.Ts=t;if(ob.cont){C.x=x;C.y=y;C.vx=vx;C.vy=vy;C.t=t;if(ob.xs.length>=300000)ob.cont=null}
 }
 function simRate(t){
   const P=ob.pace,s=ob.sched,n=s.length;
@@ -769,6 +774,8 @@ async function planTransfer(){
   const rel=B.par===A.n?'moon':A.par===B.n?'parent':(A.par&&A.par===B.par)?'sib':(A.par==='Sun'&&B.par&&B.par!=='Sun')?'hmoon':null;
   if(!rel)return'Launch from a planet, or pick a target in the same system — e.g. Earth to Moon, Saturn or Titan, or Io to Europa';
   const r0=A.R+OB.h*1000,rcap=B.R+defH(B)*1000,nu=vi=>Math.acos(-1/(1+r0*vi*vi/A.GM))/D;
+  if(rel!=='parent'&&B.par&&B.par!=='Sun'&&BI[B.par]){const hl=B.a*Math.cbrt(B.GM/(3*BI[B.par].GM));
+    if(hl<4*B.R)return B.n+' is too small to hold a satellite in orbit — its gravity only reaches about '+Math.round(hl/1000)+' km from its centre, and '+BI[B.par].n+'’s pull would strip it away. Pick '+BI[B.par].n+' as the target instead; with '+B.n+' switched on you can still watch it and feel its tiny tug.'}
   if(rel==='parent'){
     const mu=B.GM,r1=A.a,at=(r1+rcap)/2,vd=Math.sqrt(mu*(2/r1-1/at)),vi=W2*r1/A.P-vd,p=((270-nu(vi))%360+360)%360;
     OB.v=Math.sqrt(vi*vi+2*A.GM/r0)/1000;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=1.5*Math.PI*Math.sqrt(at**3/mu);
@@ -829,8 +836,25 @@ async function planTransfer(){
     }else if(rel==='hmoon'){
       OB.via=PB.n;const rp1=B.a-rcap;
       if(!await aim(e=>{T.ph=base+e},T,rp1,60*T.R/T.a,rp1/T.a))return'Could not line up the approach to '+T.n;
-      const r1=await osim(true,OB.tmax,{cap1:true,track:PB});if(!r1||!r1.kep)return'Could not capture at '+T.n;
-      B.ph=Math.atan2(r1.rel[1],r1.rel[0])-(mov(B)?W2/B.P*(r1.t1+r1.kep.per):0);
+      const wrap=a=>((a+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+      let e=wrap(T.ph-base);
+      const meas=async ee=>{T.ph=base+ee;const r=await osim(true,OB.tmax,{cap1:true,track:PB});return(r&&r.kep&&r.rel)?r:null};
+      const angOf=r=>Math.atan2(r.rel[1],r.rel[0])-(mov(B)?W2/B.P*(r.t1+r.kep.per):0);
+      const tol=Math.max(rcap*.12,100);
+      let r1=await meas(e),pe=null,perr=null,ok=false;
+      if(!r1)return'Could not capture at '+T.n;
+      for(let it=0;it<12;it++){
+        B.ph=angOf(r1);
+        const m=await meas(e);if(!m)return'Could not capture at '+T.n;
+        const err=Math.hypot(m.rel[0],m.rel[1])-rp1,dA=Math.abs(wrap(angOf(m)-B.ph));
+        r1=m;
+        if(Math.abs(err)<tol&&dA*B.a<rcap*.25){ok=true;break}
+        let step;
+        if(pe===null||Math.abs(e-pe)<1e-15)step=-Math.sign(err||1)*Math.max(Math.abs(err)/T.a,1e-9);
+        else{const sl=(err-perr)/(e-pe);step=(isFinite(sl)&&Math.abs(sl)>1)?-err/sl:-Math.sign(err)*Math.abs(err)/T.a}
+        pe=e;perr=err;e+=step;
+      }
+      if(!ok)return'Couldn’t line up the capture at '+B.n+' precisely enough — try a different launch point or height';
     }else if(!await aim(e=>{T.ph=base+e},B,rcap,60*T.R/T.a,rcap/T.a))return'Couldn’t plan this transfer automatically — try another launch body or target';
   }return null};
   let msg=null;
@@ -979,6 +1003,7 @@ function circPts(cx,cy,r,fill){
 const ellPt=(k,E)=>{const b=k.a*Math.sqrt(1-k.e*k.e),xr=k.a*(Math.cos(E)-k.e),yr=b*Math.sin(E),c=Math.cos(k.w),s=Math.sin(k.w);return[xr*c-yr*s,xr*s+yr*c]};
 function drawOrbit(){
   if(!ob||W<20||Hh<20)return;aimH=null;aimOn=false;
+  if(ob.cont&&otm+ob.kep.per*.4>ob.Ts){extendOb(otm+ob.kep.per*.9);if(ob.cont&&otm>ob.Ts)otm=ob.Ts}
   if(VO&&!(isFinite(VO.s)&&VO.s>0&&isFinite(VO.ox+VO.oy+VO.cx+VO.cy)))VO=null;
   const nowT=performance.now(),dtF=Math.min(.1,(nowT-lastDraw)/1000||.016);lastDraw=nowT;
   const L=BI[LB],B=ob.tgtN?BI[ob.tgtN]:null,vw=OB.view==='Target'&&!B?'Local':OB.view,sys=vw==='System',tg=vw==='Target',flw=vw==='Follow',foc=vw==='Focus',rf=flw||foc;
@@ -992,7 +1017,8 @@ function drawOrbit(){
   else if(flw){
     if(XF&&otm>=ob.tdep){
       if(ob.pace&&otm<ob.pace.capT){let bdist=Infinity,bb=null,dK=Infinity;for(const cb of [L,...ob.pace.fly.map(f=>BI[f.n]),ob.via||B]){const pq=pos(cb,otm),dq=Math.hypot(q.x-pq[0],q.y-pq[1]);if(dq<bdist){bdist=dq;bb=cb}if(cb.n===domKeep)dK=dq}dom=(domKeep&&dK<Infinity&&bdist>=.75*dK)?BI[domKeep]:bb;domKeep=dom.n}
-      else dom=(ob.via&&otm<XF.t)?ob.via:B;
+      else if(ob.via&&otm<XF.t){const b2=(ob.pace.t2-ob.pace.capT)/6;dom=(XF.t-otm)<ob.pace.tau*b2*1.3?B:ob.via}
+      else dom=B;
     }
     else{let bk=-1;for(const b of E){const p=pos(b,otm),d=Math.max(Math.hypot(q.x-p[0],q.y-p[1]),1),k=b.GM/(d*d);if(k>bk){bk=k;dom=b}}}
   }
@@ -1014,8 +1040,7 @@ function drawOrbit(){
     const sD=.4*mD/Math.max(ddS*1.15,dom.R*1.3),sC=Math.min(sD,Math.max(150/(Math.max(vrel,1)*Math.max(rateCur,1e-6)),22/dom.R));
     const orb=kcur&&kcur.P===fb;orbBlend+=((orb&&(capAt===0||nowT-capAt>2500)?1:0)-orbBlend)*Math.min(1,dtF*3);
     const ub=orbBlend;
-    tx0=satF[0];ty0=satF[1];satLock=true;
-    st=orb||ub>.001?Math.exp((1-ub)*Math.log(sC)+ub*Math.log(.231*mD/Math.max(orb?kcur.a:dom.R,1))):sC;
+    tx0=satF[0];ty0=satF[1];satLock=true;st=sC;
   }else{
     const bb=sys?ob.bbS:tg?(XF&&otm>=XF.t?ob.bbP:ob.bbT):ob.bbL,[bx0,bx1,by0,by1]=bb,mn=sys?1e6:.004*Cb.R,bw=Math.max(bx1-bx0,mn),bh=Math.max(by1-by0,mn);
     st=Math.min(aW/bw,aH/bh);tcx=(bx0+bx1)/2;tcy=(by0+by1)/2;
@@ -1069,8 +1094,9 @@ function drawOrbit(){
     for(let i=Math.ceil(i0/SK)*SK;i<=i1;i+=SK){const r=pf(i);P.add(X(r[0]),Y(r[1]))}
     if(i1>=i0){const r=pf(i1);P.add(X(r[0]),Y(r[1]),true)}
     ctx.stroke();
-    if(kp&&XF&&!pumping)ellK(kp,ob.Ts0,.45);
-  }else if(kcur)ellK(kcur,otm,.85);
+    if(kp&&XF&&!pumping)ellK(kp,ob.Ts0,.55);
+    if(ob.kep1&&ob.t1!=null&&!pumping)ellK(ob.kep1,ob.t1,.55);
+  }else if(kcur){ellK(kcur,otm,.85);if(viaStage&&kp)ellK(kp,ob.Ts0,.55)}
   ctx.setLineDash([]);ctx.globalAlpha=1;
   // Kepler's second law: equal areas in equal times
   if(OB.kep2&&kcur&&!pumping){
@@ -1093,7 +1119,9 @@ function drawOrbit(){
   ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--text');ctx.lineWidth=2;
   if(!capd){const lp=mpf(ob.xs[0],ob.ys[0],ob.ts[0]),lx=X(lp[0]),ly=Y(lp[1]);if(vis(lx,ly)){ctx.beginPath();ctx.arc(lx,ly,4.5,0,7);ctx.fill();ctx.stroke();label('Launch',lx+34,ly-4)}}
   let ri=0;const nr=ob.burns.filter(b=>b.kind==='Orbit raise'&&b.t<=otm).length;
-  for(const b of ob.burns){if(b.kind==='Orbit raise')ri++;if(otm<b.t||(capd&&!/Capture/.test(b.kind)))continue;const bm=mpf(b.x,b.y,b.t),bx=X(bm[0]),by=Y(bm[1]);if(!vis(bx,by))continue;const big=/Capture|Departure/.test(b.kind),r_=big?7:5.5;
+  for(const b of ob.burns){if(b.kind==='Orbit raise')ri++;
+    if(otm<b.t){if(/Capture/.test(b.kind)&&!pumping){const fm=mpf(b.x,b.y,b.t),fx=X(fm[0]),fy=Y(fm[1]);if(vis(fx,fy)){ctx.globalAlpha=.6;ctx.beginPath();ctx.moveTo(fx,fy-6);ctx.lineTo(fx+6,fy);ctx.lineTo(fx,fy+6);ctx.lineTo(fx-6,fy);ctx.closePath();ctx.stroke();label('Planned '+b.kind.toLowerCase(),fx,fy+22);ctx.globalAlpha=1}}continue}
+    if(capd&&!/Capture/.test(b.kind))continue;const bm=mpf(b.x,b.y,b.t),bx=X(bm[0]),by=Y(bm[1]);if(!vis(bx,by))continue;const big=/Capture|Departure/.test(b.kind),r_=big?7:5.5;
     ctx.beginPath();ctx.moveTo(bx,by-r_);ctx.lineTo(bx+r_,by);ctx.lineTo(bx,by+r_);ctx.lineTo(bx-r_,by);ctx.closePath();ctx.fill();ctx.stroke();
     if(big)label(b.kind,bx,/Capture/.test(b.kind)?by+22:by-18);else if(b.kind==='Orbit raise'&&rf&&ri===nr)label('Burn '+ri,bx,by+18)}
   if(kcur&&!pumping&&kcur.a*s>45){
@@ -1117,7 +1145,7 @@ function drawOrbit(){
 let paceSt='',paceHold=0,cap1Seen=false,domKeep='';
 function orbStep(dt){
   if(!ob||!oplay)return;
-  if(ob.cont&&otm+ob.kep.per*.4>ob.Ts)extendOb(otm+ob.kep.per*.9);
+  if(ob.cont&&otm+ob.kep.per*.4>ob.Ts){extendOb(otm+ob.kep.per*.9);if(ob.cont&&otm>ob.Ts)otm=ob.Ts}
   const tr=simRate(otm+Math.max(rateCur,0)*.12)*spdO/4;
   if(tr<=0){otm=ob.Ts;oplay=false;icon();landAt=performance.now();toast(ob.hit?(ob.hit===BI[LB]?'Impact — '+f(ob.range/1000,0)+' km downrange':'Impact on '+ob.hit.n):ob.type);paceUi('');return}
   const lt=Math.log(tr),lc=rateCur>0?Math.log(rateCur):lt-.9,d=lt-lc;
