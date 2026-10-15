@@ -162,7 +162,7 @@ select:focus{border-color:var(--accent)}
     <h2>Simulate for</h2>
     <div class="chips" id="odu"></div>
   </section>
-  <p class="ver">v2.11.1 · build G18</p>
+  <p class="ver">v2.12.5 · build G24</p>
 </aside>
 <main>
   <canvas id="cv"></canvas>
@@ -361,7 +361,7 @@ function draw(){
 let last=0;
 function loop(ts){
   const dt=Math.min((ts-last)/1000,.1);last=ts;
-  if(mode==='orbit'){orbStep(dt);if(W)drawOrbit();requestAnimationFrame(loop);return}
+  if(mode==='orbit'){if(!planFreeze){orbStep(dt);if(W)drawOrbit()}requestAnimationFrame(loop);return}
   if(playing&&R.T>0){tm+=dt*spd;if(tm>=R.T){tm=R.T;playing=false;icon();landed()}}
   if(W)draw();requestAnimationFrame(loop);
 }
@@ -706,6 +706,7 @@ function atT(t){
   return r;
 }
 const ss3=u=>{u=Math.max(0,Math.min(1,u));return u*u*(3-2*u)};
+const dotPx=b=>Math.min(2.4,Math.max(.55,1.4*Math.pow(b.R/6.9911e7,.25)));
 function transitRate(t){
   const P=ob.pace;
   if(t<P.capT){let r=Infinity;for(const e of P.ev)r=Math.min(r,Math.max(e.rF,Math.abs(t-e.t)/e.tau));return r}
@@ -883,7 +884,8 @@ function oresults(){
   if(ob.close)it.push(['Closest to '+ob.close.n,f(ob.close.alt/1000,0),'km']);
   $('ores').innerHTML=it.map(([l,v,u,w,fm])=>'<div class="'+(w?'w2 fd':'')+'"><small>'+l+'</small><b'+(w?' style="font-size:19px"':'')+'>'+v+'</b><i>'+u+'</i>'+(fm?'<em>'+fm+'</em>':'')+'</div>').join('');
 }
-function orbRestart(){orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;paceSt='';domKeep='';oresults();icon()}
+let lastLB=LB;
+function orbRestart(){const farAway=ob&&ob.Tend>0&&otm>.03*ob.Tend,lbChanged=LB!==lastLB;lastLB=LB;if(farAway||lbChanged){VO=null;ZO=1;PN[0]=PN[1]=0}orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;paceSt='';domKeep='';oresults();icon()}
 function osync(){
   const m=lim();const ge=$('ogeo');if(ge)ge.hidden=LB!=='Earth';
   OC.forEach(([k,,,mn,mx])=>{const n=$('on'+k),r=$('or'+k),M=k==='v'?m.v:k==='h'?m.h:mx;
@@ -947,7 +949,8 @@ function buildTarget(){
   $('otn').textContent=OB.tgt?'Route: '+OB.route+'. Burns are kept small: orbit-raising at perigee, gravity assists where they help, and an elliptical (not circular) capture.':'Optional. Pick a second body and the launch values are set automatically so the satellite ends up orbiting it.';
 }
 let planSeq=0,planRun=Promise.resolve();
-function busy(on_,txt){const e=$('busy');if(!e)return;e.hidden=!on_;if(txt)$('busyt').textContent=txt}
+let planFreeze=false;
+function busy(on_,txt){planFreeze=!!on_;const e=$('busy');if(!e)return;e.hidden=!on_;if(txt)$('busyt').textContent=txt}
 function planProg(n){const pc=Math.min(97,Math.round(100*(1-Math.exp(-n/70))));$('busyt').textContent='Running more calculations… '+pc+'%'}
 function cancelPlan(){planSeq++;curPlan.cancelled=true;busy(false)}
 async function replan(){
@@ -1069,14 +1072,14 @@ function drawOrbit(){
   E.forEach(b=>{if(!mov(b))return;const c=F(pos(BI[b.par],otm)),rr=b.a*s;if(rr>4){ctx.setLineDash([2,6]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.4;ctx.lineWidth=1;ctx.beginPath();circPts(X(c[0]),Y(c[1]),rr,false);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}});
   const ev=XF?{b:B,t:XF.t}:(ob.hit&&ob.hit!==L?{b:ob.hit,t:ob.Ts}:null);
   if(ev&&!tg&&otm<ev.t&&ev.b!==fb){
-    const w0=pos(ev.b,ev.t),pf0=sys?[0,0]:pos(fb,ev.t),gx=X(w0[0]-pf0[0]),gy=Y(w0[1]-pf0[1]),gr=Math.max(ev.b.R*s,5);
+    const w0=pos(ev.b,ev.t),pf0=sys?[0,0]:pos(fb,ev.t),gx=X(w0[0]-pf0[0]),gy=Y(w0[1]-pf0[1]),gr=Math.max(ev.b.R*s,dotPx(ev.b)+3);
     if(vis(gx,gy)&&gr<2500){ctx.setLineDash([4,4]);ctx.strokeStyle=ev.b.c;ctx.lineWidth=2;ctx.globalAlpha=.8;ctx.beginPath();ctx.arc(gx,gy,gr,0,7);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;label(ev.b.n+' at arrival',gx,gy-gr-12)}
   }
   const scr={},combo={},hideL={};
   E.forEach(b=>{const c=F(pos(b,otm));scr[b.n]=[X(c[0]),Y(c[1])]});
   E.forEach(b=>{if(b.par&&b.par!=='Sun'&&scr[b.par]){const a=scr[b.n],pp=scr[b.par];if(Math.hypot(a[0]-pp[0],a[1]-pp[1])<22){hideL[b.n]=1;(combo[b.par]=combo[b.par]||[]).push(b.n)}}});
   [...E].sort((a,b)=>b.R-a.R).forEach(b=>{
-    const c=F(pos(b,otm)),px=X(c[0]),py=Y(c[1]),rp=b.R*s,rd=Math.max(rp,3);
+    const c=F(pos(b,otm)),px=X(c[0]),py=Y(c[1]),rp=b.R*s,rd=Math.max(rp,dotPx(b));
     if(b===Cb&&!sys){ctx.beginPath();circPts(px,py,rp+Math.min(100e3*s,40),true);ctx.fillStyle=b.c;ctx.globalAlpha=.18;ctx.fill();ctx.globalAlpha=1}
     ctx.beginPath();circPts(px,py,rd,true);ctx.fillStyle=b.c;ctx.fill();
     if(rp>8){ctx.beginPath();circPts(px,py,rd,false);ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.14)';ctx.stroke()}
@@ -1085,6 +1088,10 @@ function drawOrbit(){
   if(vw==='Local'&&ob.r0*s>4){ctx.setLineDash([3,7]);ctx.strokeStyle=css('--axis');ctx.globalAlpha=.5;ctx.lineWidth=1.2;ctx.beginPath();circPts(X(0),Y(0),ob.r0*s,false);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1}
   const ellK=(k,tref,al)=>{const Pp=pos(k.P,tref),Rf=sys?[0,0]:pos(fb,tref),P=mkPoly();ctx.globalAlpha=al;ctx.beginPath();
     for(let i=0;i<=320;i++){const z=ellPt(k,2*Math.PI*i/320);P.add(X(Pp[0]+z[0]-Rf[0]),Y(Pp[1]+z[1]-Rf[1]))}ctx.stroke()};
+  const contK=(k,t0,al)=>{ // the real path after the burn: the capture orbit carried along with the planet, drawn in the same frame as the approach
+    const Es=solveE(k.e,k.M0),Ms=Es-k.e*Math.sin(Es),P=mkPoly(),NS=420;ctx.globalAlpha=al;ctx.beginPath();
+    for(let j=0;j<=NS;j++){const Ej=Es+2*Math.PI*j/NS,tt=j===NS?t0+k.per:t0+(Ej-k.e*Math.sin(Ej)-Ms)/k.n,s_=keplerAt(k,tt),pp=pos(k.P,tt),pd=sys?[0,0]:pos(fb,tt);P.add(X(pp[0]+s_.x-pd[0]),Y(pp[1]+s_.y-pd[1]))}
+    ctx.stroke()};
   const iC=capT!=null?idxT(capT):(kp?idxT(ob.Ts0):n-1);
   ctx.lineWidth=2;ctx.strokeStyle=css('--axis');ctx.setLineDash([2,6]);
   if(pumping){ellK(pk,otm,.8);if(ob.pumpK[pidx+1])ellK(ob.pumpK[pidx+1],otm,.4)}
@@ -1094,8 +1101,8 @@ function drawOrbit(){
     for(let i=Math.ceil(i0/SK)*SK;i<=i1;i+=SK){const r=pf(i);P.add(X(r[0]),Y(r[1]))}
     if(i1>=i0){const r=pf(i1);P.add(X(r[0]),Y(r[1]),true)}
     ctx.stroke();
-    if(kp&&XF&&!pumping)ellK(kp,ob.Ts0,.55);
-    if(ob.kep1&&ob.t1!=null&&!pumping)ellK(ob.kep1,ob.t1,.55);
+    if(kp&&XF&&!pumping){if(ob.kep1&&ob.t1!=null)ellK(kp,ob.Ts0,.55);else contK(kp,XF.t,.7)}
+    if(ob.kep1&&ob.t1!=null&&!pumping)contK(ob.kep1,ob.t1,.7);
   }else if(kcur){ellK(kcur,otm,.85);if(viaStage&&kp)ellK(kp,ob.Ts0,.55)}
   ctx.setLineDash([]);ctx.globalAlpha=1;
   // Kepler's second law: equal areas in equal times
@@ -1133,9 +1140,10 @@ function drawOrbit(){
   let ip=null;
   if(ob.hit){ip=pf(n-1);const ex=X(ip[0]),ey=Y(ip[1]);if(vis(ex,ey)){ctx.fillStyle=css('--canvas');ctx.strokeStyle=css('--text');ctx.lineWidth=2;ctx.beginPath();ctx.arc(ex,ey,4.5,0,7);ctx.fill();ctx.stroke();label(ob.hit===L?'Impact · '+f(ob.range/1000,0)+' km':'Impact on '+ob.hit.n,ex,ey-16)}}
   const sx=X(satF[0]),sy=Y(satF[1]);
-  if(vis(sx,sy)){ctx.fillStyle=ac;ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(sx,sy,8,0,7);ctx.fill();ctx.stroke()}
+  const mr=Math.max(1.6,Math.min(4,1.6+.5*Math.log10(s/1e-10)));
+  if(vis(sx,sy)){ctx.fillStyle=ac;ctx.strokeStyle='#fff';ctx.lineWidth=mr<3?1.1:1.7;ctx.beginPath();ctx.arc(sx,sy,mr,0,7);ctx.fill();ctx.stroke()}
   if(landAt&&ip){const u=(nowT-landAt)/800;if(u<1&&vis(X(ip[0]),Y(ip[1]))){ctx.strokeStyle=ac;ctx.globalAlpha=1-u;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(X(ip[0]),Y(ip[1]),8+u*36,0,7);ctx.stroke();ctx.globalAlpha=1}}
-  const Ls=nice(110/s),bl=Ls*s,by=Hh-padB+14;
+  const Ls=nice((W<500?64:110)/s),bl=Ls*s,by=Hh-padB-12;
   ctx.strokeStyle=css('--text');ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(20,by);ctx.lineTo(20+bl,by);ctx.moveTo(20,by-5);ctx.lineTo(20,by+5);ctx.moveTo(20+bl,by-5);ctx.lineTo(20+bl,by+5);ctx.stroke();
   label(Ls>=1.5e10?(+(Ls/1.496e11).toPrecision(2))+' AU':Ls>=1000?+(Ls/1000).toPrecision(3)+' km':Ls+' m',20+bl/2,by+16);
   const Cp=pos(Cb,otm),vC=vel(Cb,otm),al=Math.hypot(q.x-Cp[0],q.y-Cp[1])-Cb.R,sp=Math.hypot(q.vx+vL[0]-vC[0],q.vy+vL[1]-vC[1]);
@@ -1190,7 +1198,7 @@ cv.addEventListener('pointermove',e=>{
 cv.addEventListener('wheel',e=>{if(mode!=='orbit')return;e.preventDefault();const p=pt(e);oz(Math.exp(-e.deltaY*.0015),p[0],p[1])},{passive:false});
 $('tzi').onclick=()=>oz(1.5,W/2,OYM);$('tzo').onclick=()=>oz(1/1.5,W/2,OYM);
 $('tzr').onclick=()=>{ZO=1;PN[0]=PN[1]=0;VO=null};
-$('rpl').onclick=()=>{if(mode==='orbit'){otm=0;oplay=true;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;domKeep=''}else{tm=0;playing=R.T>0}icon()};
+$('rpl').onclick=()=>{if(mode==='orbit'){if(otm>.03*ob.Tend){VO=null;ZO=1;PN[0]=PN[1]=0}otm=0;oplay=true;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;domKeep=''}else{tm=0;playing=R.T>0}icon()};
 $('kp2').onclick=e=>{OB.kep2=!OB.kep2;e.target.classList.toggle('on',OB.kep2)};
 calc();results();sync();icon();requestAnimationFrame(loop);
 </script>
