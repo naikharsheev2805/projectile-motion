@@ -1,13 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Projectile Motion</title>
 <style>
 :root{--bg:#FAF9F5;--panel:#F3F1EA;--canvas:#FEFDFB;--line:#E6E3D8;--text:#141413;--muted:#77756E;--accent:#C96442;--grid:#EFEDE5;--axis:#8A887F;--card:#fff;--blue:#4B7BB5;--ground:#EDEADF}
-@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#262624;--panel:#1F1E1D;--canvas:#2A2927;--line:#3A3935;--text:#FAF9F5;--muted:#A3A19A;--accent:#D97757;--grid:#34332F;--axis:#8F8D86;--card:#30302E;--blue:#6E9AD0;--ground:#33322E}}
-:root[data-theme=dark]{--bg:#262624;--panel:#1F1E1D;--canvas:#2A2927;--line:#3A3935;--text:#FAF9F5;--muted:#A3A19A;--accent:#D97757;--grid:#34332F;--axis:#8F8D86;--card:#30302E;--blue:#6E9AD0;--ground:#33322E}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#262624;--panel:#1F1E1D;--canvas:#2A2927;--line:#3A3935;--text:#FAF9F5;--muted:#A3A19A;--accent:#D97757;--grid:#34332F;--axis:#8F8D86;--card:#30302E;--blue:#6E9AD0;--ground:#33322E}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#262624;--panel:#1F1E1D;--canvas:#2A2927;--line:#3A3935;--text:#FAF9F5;--muted:#A3A19A;--accent:#D97757;--grid:#34332F;--axis:#8F8D86;--card:#30302E;--blue:#6E9AD0;--ground:#33322E}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,"Segoe UI",system-ui,sans-serif;display:flex;overflow:hidden;padding-top:env(safe-area-inset-top,0px)}
@@ -82,6 +78,26 @@ aside.col>:not(.grab){display:none}
 canvas{touch-action:none}
 .res .w2{grid-column:span 2}
 .res em{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:3px;font-family:Georgia,serif}
+.datebar{display:flex;gap:8px;align-items:center}
+.datebtn{flex:1;display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--card);color:var(--text);font:500 14px inherit;font-family:inherit;padding:9px 12px;border-radius:12px;cursor:pointer;text-align:left}
+.datebtn svg{width:17px;height:17px;stroke:var(--muted);fill:none;stroke-width:1.7;stroke-linecap:round;flex:none}
+.datenow{border:1px solid var(--line);background:var(--card);color:var(--muted);font:500 13px inherit;font-family:inherit;padding:9px 13px;border-radius:12px;cursor:pointer}
+.calwrap{position:fixed;inset:0;background:rgba(20,20,19,.38);display:flex;align-items:center;justify-content:center;z-index:40}
+.calwrap[hidden]{display:none}
+.cal{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 14px 12px;width:min(332px,92vw);box-shadow:0 18px 48px rgba(0,0,0,.28);color:var(--text)}
+.calh{display:flex;align-items:center;gap:4px;margin-bottom:8px}
+.calh b{flex:1;text-align:center;font-weight:600;font-size:15px}
+.calh button{width:32px;height:32px;border-radius:50%;border:0;background:transparent;color:var(--muted);font:500 18px inherit;font-family:inherit;cursor:pointer;line-height:1}
+.calh button:hover{background:var(--panel);color:var(--text)}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.calg span{font-size:11px;color:var(--muted);padding:4px 0}
+.calg i{display:block}
+.calg button{aspect-ratio:1;border:0;background:transparent;color:var(--text);border-radius:50%;font:500 13.5px inherit;font-family:inherit;cursor:pointer;padding:0}
+.calg button:hover{background:var(--panel)}
+.calg button.tod{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.calg button.sel,.calg button.sel:hover{background:var(--accent);color:#fff}
+.calf{display:flex;justify-content:space-between;margin-top:10px}
+.calf button{border:0;background:transparent;color:var(--accent);font:600 13.5px inherit;font-family:inherit;padding:6px 8px;border-radius:8px;cursor:pointer}
 .ver{margin:34px 0 2px;text-align:center;font-size:10.5px;color:var(--muted);opacity:.3;letter-spacing:.08em;user-select:none}
 #tzi,#tzo,#tzr{display:none}main.orb #tzi,main.orb #tzo,main.orb #tzr{display:flex}
 main.orb #tsc,main.orb #tpin,main.orb #tclr,main.orb #ttg{display:none}
@@ -105,9 +121,17 @@ select:focus{border-color:var(--accent)}
 .tools button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .tools svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 @media(max-width:760px){.tools .lb{display:none}.tools{right:12px;top:12px;flex-direction:column}.live{left:12px;top:12px}body{flex-direction:column}aside{order:2;width:100%;border-right:0;border-top:1px solid var(--line);flex:none;height:var(--ah,50%);padding-top:0}main{flex:1;min-height:0;height:auto}.grab{display:flex}.live{gap:12px;padding:7px 11px}.live div b{font-size:12.5px}}
+.kr.sp{cursor:pointer;transition:background .15s}
+.kr.sp:hover{background:color-mix(in srgb,var(--accent) 5%,transparent)}
+.kr.sp:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.kr.sp .rd{width:16px;height:16px;border-radius:50%;border:2px solid var(--axis);flex:none;transition:all .15s}
+.kr.sp.on .rd{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--card)}
+.kr.sp .nm small{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.kr.sp.on .nm{font-weight:600}
+.kr.sp .tf{white-space:nowrap;flex:none;text-align:right;line-height:1.3;border-radius:12px;padding:4px 10px}
+.kr.sp .tf span{display:block}
+.go.alt{background:var(--card);color:var(--accent);border:1px solid var(--accent)}
 </style>
-</head>
-<body>
 <aside>
   <div class="grab" id="grab" aria-label="Drag to resize"><i></i><button class="chev" id="chev" aria-label="Expand or collapse settings"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button></div>
   <header>
@@ -146,6 +170,13 @@ select:focus{border-color:var(--accent)}
     <h2>Transfer to</h2>
     <div class="chips" id="otg"></div>
     <p class="note" id="otn"></p>
+    <div id="spw" hidden><h2>Trip speed</h2><div class="klist" id="osp"></div><button class="go alt" id="spc" style="margin-top:10px" hidden>Compare all speeds</button><p class="note" id="ospn">Quicker trips need a bigger launch burn and a harder braking burn at arrival. Each speed has its own launch dates.</p></div>
+    <div id="enw" hidden><h2>Orbit entry</h2><div class="klist" id="oen"></div><p class="note" id="oenn">A gentler entry captures into a wider, more stretched orbit, so the braking burn at arrival is smaller. The first orbit takes longer. The launch and the approach stay the same.</p></div>
+    <h2>Launch date</h2>
+    <div class="datebar"><button id="dtb" class="datebtn" aria-label="Choose launch date"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span id="dtt"></span></button><button id="dtn" class="datenow">Today</button></div>
+    <p class="note" id="dtc"></p>
+    <div class="chips" id="dtw" style="margin-top:10px"></div>
+    <div class="sw"><span>Real planet positions</span><button id="dtr" aria-label="Toggle real planet positions"></button></div>
     <h2>Launch</h2>
     <div id="octl"></div>
     <h2>Direction</h2>
@@ -162,8 +193,9 @@ select:focus{border-color:var(--accent)}
     <h2>Simulate for</h2>
     <div class="chips" id="odu"></div>
   </section>
-  <p class="ver">v2.12.5 · build G24</p>
+  <p class="ver">v2.15.0 · build G27</p>
 </aside>
+<div class="calwrap" id="calw" hidden><div class="cal" role="dialog" aria-label="Launch date"><div class="calh"><button id="cpy" aria-label="Previous year">«</button><button id="cpm" aria-label="Previous month">‹</button><b id="cmt"></b><button id="cnm" aria-label="Next month">›</button><button id="cny" aria-label="Next year">»</button></div><div class="calg" id="cwd"></div><div class="calg" id="cgr"></div><div class="calf"><button id="ctd">Today</button><button id="ccl">Close</button></div></div></div>
 <main>
   <canvas id="cv"></canvas>
   <div class="toast" id="toast"></div>
@@ -521,15 +553,107 @@ const BD=[
 {n:'Triton',GM:1.4276e12,R:1.3534e6,c:'#C8D4DA',par:'Neptune',a:3.54759e8,P:-5.078e5,ph:2.3}];
 const BI={};BD.forEach(b=>BI[b.n]=b);
 const on={Earth:true};let LB='Earth';
-const OB={v:7,a:0,h:190,p:0,dir:1,view:'Local',dur:0,tgt:null,tmax:0,pump:null,route:'',via:null,focus:null,Q:null,kep2:false,userView:false};
+const OB={v:7,a:0,h:190,p:0,dir:1,view:'Local',dur:0,tgt:null,tmax:0,pump:null,route:'',via:null,focus:null,Q:null,kep2:false,userView:false,speed:0,entry:0,spdOk:true,cmp:{},cmpKey:''};
 BD.forEach(b=>b.ph0=b.ph);
+// ---- real dates: where the planets really are on a chosen day (circular-orbit model: Mars and Mercury can be a few degrees off) ----
+BD.forEach(b=>b.phDemo=b.ph);
+const J2000=Date.UTC(2000,0,1,12),W2P=2*Math.PI;
+const EPH={Mercury:[252.25032350,149472.67411175],Venus:[181.97909950,58517.81538729],Earth:[100.46457166,35999.37244981],Mars:[355.44656795,19140.30268499],Jupiter:[34.39644051,3034.74612775],Saturn:[49.95424423,1222.49362201],Uranus:[313.23810451,428.48202785],Neptune:[304.87997031,218.45945325]};
+const EPHD={Io:[106.07719,203.488955790],Europa:[175.73161,101.374724735],Ganymede:[120.55883,50.317609207],Callisto:[84.44459,21.571071177]};
+function realPhase(b,ms){
+  if(!b.par)return b.phDemo||0;
+  const d=(ms-J2000)/864e5,T=d/36525;let deg=null;
+  if(EPH[b.n])deg=EPH[b.n][0]+EPH[b.n][1]*T;
+  else if(b.n==='Moon')deg=218.3164477+481267.88123421*T;
+  else if(EPHD[b.n])deg=EPHD[b.n][0]+EPHD[b.n][1]*d;
+  if(deg!==null)return(((deg%360)+360)%360)*D;
+  return(((b.phDemo+W2P*d*86400/b.P)%W2P)+W2P)%W2P;
+}
+function applyPhases(real,ms){BD.forEach(b=>{b.ph0=real?realPhase(b,ms):b.phDemo;b.ph=b.ph0})}
+const todayMs=()=>{const n=new Date();return Date.UTC(n.getFullYear(),n.getMonth(),n.getDate(),12)};
+OB.real=true;OB.date=todayMs();OB.dateEff=OB.date;OB.winT=null;OB.winList=[];applyPhases(true,OB.date);
+// ---- trip speed: how far past the target's orbit the transfer ellipse reaches (bigger = quicker, costlier) ----
+const SPD=[['Economy',0,'Least fuel'],['Quick',1.25,'A bit quicker'],['Rapid',1.6,'Much quicker'],['Express',2.2,'Quickest, most fuel']];
+const spL=k=>{const m=SPD[k]?SPD[k][1]:0;return m?{o:m,i:1/m,ao:m+.03,ai:1/(m+.03)}:{o:1.03,i:.97,ao:1.06,ai:.94}};
+function legGeom(mu,r1,r2,lv){ // flight time and swept angle until the transfer ellipse for trip speed lv first reaches radius r2
+  const L=spL(lv),out=r2>=r1,aim=r2*(out?L.o:L.i),a=(r1+aim)/2,e=Math.abs(aim-r1)/(aim+r1),p=a*(1-e*e),n=Math.sqrt(mu/(a*a*a));
+  const nu=Math.acos(Math.max(-1,Math.min(1,(p/r2-1)/e))),E=2*Math.atan2(Math.sqrt(1-e)*Math.sin(nu/2),Math.sqrt(1+e)*Math.cos(nu/2));
+  return out?{tof:(E-e*Math.sin(E))/n,th:nu}:{tof:(Math.PI-E+e*Math.sin(E))/n,th:Math.PI-nu};
+}
+function firstHop(A,B){ // the planet the first leg heads for (mirrors the planner's route choice)
+  const hm=A.par==='Sun'&&B.par&&B.par!=='Sun',sib=A.par==='Sun'&&B.par==='Sun'&&A!==B;
+  if(!hm&&!sib)return null;
+  const PB=hm?BI[B.par]:B;let T=PB;
+  if(A.a<BI.Jupiter.a*.9&&PB!==BI.Jupiter&&PB.a>=BI.Saturn.a*.99)T=BI.Jupiter;
+  return T===A?null:T;
+}
+function windowDelay(A,T,ms,lv){ // seconds from ms until the launch window (for trip speed lv) from A to T opens
+  const g=lv?legGeom(BI.Sun.GM,A.a,T.a,lv):null,tof=g?g.tof:Math.PI*Math.sqrt(((A.a+T.a)/2)**3/BI.Sun.GM),nT=W2P/T.P,nA=W2P/A.P,s=nT-nA;
+  const phi=(g?g.th:Math.PI)-nT*tof,rel=realPhase(T,ms)-realPhase(A,ms),delta=(((phi-rel)%W2P)+W2P)%W2P;
+  return delta===0?0:(s>0?delta/s:(W2P-delta)/(-s));
+}
+function winReset(){OB.winT=null;OB.winList=[];OB.dateEff=OB.date;applyPhases(OB.real,OB.date)}
+function winPrepare(){
+  OB.winT=null;OB.winList=[];
+  if(!OB.real){OB.dateEff=OB.date;applyPhases(false);return}
+  const A=BI[LB],B=OB.tgt?BI[OB.tgt]:null,T=B?firstHop(A,B):null;let ms=OB.date;
+  if(T){ms+=windowDelay(A,T,OB.date,OB.speed)*1000;OB.winT=T.n}
+  OB.dateEff=ms;applyPhases(true,ms);
+}
+function winFinish(){
+  if(!OB.real||!OB.winT)return;
+  const A=BI[LB],T=BI[OB.winT],s=W2P/T.P-W2P/A.P,syn=W2P/Math.abs(s),x=T.ph-realPhase(T,OB.dateEff),eps=Math.atan2(Math.sin(x),Math.cos(x));
+  let dt=eps/s;if(!(Math.abs(dt)<syn/2))dt=0;
+  OB.dateEff+=dt*1000;OB.winList=[0,1,2].map(k=>OB.dateEff+k*syn*1000);
+}
+function setDate(ms){OB.date=ms;if(OB.tgt)replan();else{winReset();orbRestartBusy()}buildDate()}
+const fmtD=ms=>new Date(ms).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+function buildDate(){
+  const bt=$('dtt');if(!bt)return;
+  bt.textContent=fmtD(OB.date);$('dtr').classList.toggle('on',OB.real);
+  const c=$('dtc'),w=$('dtw');w.innerHTML='';
+  if(!OB.real){c.textContent='Fixed demo positions: the planets always start in the same places, and the planner puts the target wherever the transfer needs it.';return}
+  let m='Planets are where they really are on this day (circular-orbit model, so Mars and Mercury can be a few degrees off).';
+  if(OB.tgt&&OB.winT){
+    const sp_=OB.speed?' ('+SPD[OB.speed][0]+' trip)':'';m=(OB.dateEff<OB.date-432e5?'A launch window for '+OB.winT+sp_+' is open now — best around ':'Next launch window for '+OB.winT+sp_+': ')+fmtD(OB.dateEff)+'.';
+    if(ob&&ob.xfer)m+=' Total Δv '+f(ob.dvTot/1000,2)+' km/s, '+fmtT(ob.xfer.t)+' to arrive.';
+    if(OB.route&&OB.route.includes('assist'))m+=' Gravity assists are idealised: the assist planet is placed where it helps.';
+    OB.winList.forEach((d,i)=>{const e=document.createElement('button');e.textContent=fmtD(d);e.title=i?'Following window':'Next window';e.onclick=()=>setDate(d);w.appendChild(e)});
+  }
+  c.textContent=m;
+}
+let calY=2026,calM=9;
+const MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function drawCal(){
+  $('cmt').textContent=MN[calM]+' '+calY;
+  const wd=$('cwd');if(!wd.children.length)'SMTWTFS'.split('').forEach(x=>{const s=document.createElement('span');s.textContent=x;wd.appendChild(s)});
+  const g=$('cgr');g.innerHTML='';
+  const first=new Date(Date.UTC(calY,calM,1)).getUTCDay(),dim=new Date(Date.UTC(calY,calM+1,0)).getUTCDate(),sel=new Date(OB.date),tn=new Date();
+  for(let i=0;i<first;i++)g.appendChild(document.createElement('i'));
+  for(let d=1;d<=dim;d++){
+    const b=document.createElement('button');b.textContent=d;
+    if(sel.getUTCFullYear()===calY&&sel.getUTCMonth()===calM&&sel.getUTCDate()===d)b.classList.add('sel');
+    if(tn.getFullYear()===calY&&tn.getMonth()===calM&&tn.getDate()===d)b.classList.add('tod');
+    b.onclick=()=>{$('calw').hidden=true;setDate(Date.UTC(calY,calM,d,12))};g.appendChild(b);
+  }
+}
+const calGo=dm=>{let m=calM+dm,y=calY;while(m<0){m+=12;y--}while(m>11){m-=12;y++}if(y<1900||y>2100)return;calY=y;calM=m;drawCal()};
+$('dtb').onclick=()=>{const d=new Date(OB.date);calY=d.getUTCFullYear();calM=d.getUTCMonth();drawCal();$('calw').hidden=false};
+$('dtn').onclick=()=>setDate(todayMs());
+$('dtr').onclick=()=>{OB.real=!OB.real;if(OB.tgt)replan();else{winReset();orbRestartBusy()}buildDate()};
+$('cpm').onclick=()=>calGo(-1);$('cnm').onclick=()=>calGo(1);$('cpy').onclick=()=>calGo(-12);$('cny').onclick=()=>calGo(12);
+$('ctd').onclick=()=>{$('calw').hidden=true;setDate(todayMs())};$('ccl').onclick=()=>{$('calw').hidden=true};
+$('calw').onclick=e=>{if(e.target===$('calw'))$('calw').hidden=true};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('calw').hidden=true});
 let ob=null,otm=0,oplay=true,VO=null,spdO=4,ZO=1,OYM=0;const PN=[0,0];
 const fmtT=t=>t<120?t.toFixed(1)+' s':t<7200?(t/60).toFixed(1)+' min':t<172800?(t/3600).toFixed(1)+' h':t<6e7?(t/86400).toFixed(1)+' d':(t/31557600).toFixed(2)+' yr';
 const mov=b=>!!(b.par&&on[b.par]&&on[b.n]);
 const pos=(b,t)=>{if(!b.par)return[0,0];const q=pos(BI[b.par],t),an=b.ph+(mov(b)?6.283185307179586*t/b.P:0);return[q[0]+b.a*Math.cos(an),q[1]+b.a*Math.sin(an)]};
 const vel=(b,t)=>{if(!mov(b))return[0,0];const q=vel(BI[b.par],t),w=6.283185307179586/b.P,an=b.ph+w*t;return[q[0]-b.a*w*Math.sin(an),q[1]+b.a*w*Math.cos(an)]};
 const mm=a=>a.reduce((p,c)=>[Math.min(p[0],c),Math.max(p[1],c)],[Infinity,-Infinity]);
-const capRa=(B,rr)=>{const hill=B.a*Math.cbrt(B.GM/(3*BI[B.par].GM)),cap=(B.par==='Sun'?.3:.08)*hill;return Math.max(Math.max(Math.min(25*B.R,cap),Math.min(3*rr,cap)),rr*1.05)};
+// ---- orbit entry: a gentler entry captures into a wider, more stretched orbit, so the braking burn at arrival is smaller ----
+const ENT=[['Standard',25,1,'Close orbit'],['Gentle',50,1.5,'Wider orbit'],['Gentlest',100,1.85,'Widest orbit']];
+const capRa=(B,rr,lv)=>{const E_=ENT[lv===undefined?OB.entry:lv]||ENT[0],hill=B.a*Math.cbrt(B.GM/(3*BI[B.par].GM)),cap=(B.par==='Sun'?.3:.08)*hill*E_[2];return Math.max(Math.max(Math.min(E_[1]*B.R,cap),Math.min(3*rr,cap)),rr*1.05)};
 const SOI=T=>T.a*Math.pow(T.GM/BI.Sun.GM,.4);
 function basis(L,p,dir){
   const vb=vel(L,0);let hh=[-1,0];if(mov(L)){const s=Math.hypot(vb[0],vb[1]);hh=[vb[0]/s,vb[1]/s]}
@@ -771,14 +895,14 @@ async function aim1(set,track,target,w,sc){
   await f(d0+b);return true;
 }
 async function planTransfer(){
-  const A=BI[LB],B=BI[OB.tgt],W2=2*Math.PI;BD.forEach(b=>b.ph=b.ph0);OB.pump=null;OB.route='';OB.via=null;OB.Q=null;pumpCache.clear();
+  const A=BI[LB],B=BI[OB.tgt],W2=2*Math.PI,LV=spL(OB.speed);OB.spdOk=true;BD.forEach(b=>b.ph=b.ph0);OB.pump=null;OB.route='';OB.via=null;OB.Q=null;pumpCache.clear();
   const rel=B.par===A.n?'moon':A.par===B.n?'parent':(A.par&&A.par===B.par)?'sib':(A.par==='Sun'&&B.par&&B.par!=='Sun')?'hmoon':null;
   if(!rel)return'Launch from a planet, or pick a target in the same system — e.g. Earth to Moon, Saturn or Titan, or Io to Europa';
   const r0=A.R+OB.h*1000,rcap=B.R+defH(B)*1000,nu=vi=>Math.acos(-1/(1+r0*vi*vi/A.GM))/D;
   if(rel!=='parent'&&B.par&&B.par!=='Sun'&&BI[B.par]){const hl=B.a*Math.cbrt(B.GM/(3*BI[B.par].GM));
     if(hl<4*B.R)return B.n+' is too small to hold a satellite in orbit — its gravity only reaches about '+Math.round(hl/1000)+' km from its centre, and '+BI[B.par].n+'’s pull would strip it away. Pick '+BI[B.par].n+' as the target instead; with '+B.n+' switched on you can still watch it and feel its tiny tug.'}
   if(rel==='parent'){
-    const mu=B.GM,r1=A.a,at=(r1+rcap)/2,vd=Math.sqrt(mu*(2/r1-1/at)),vi=W2*r1/A.P-vd,p=((270-nu(vi))%360+360)%360;
+    OB.spdOk=false;const mu=B.GM,r1=A.a,at=(r1+rcap)/2,vd=Math.sqrt(mu*(2/r1-1/at)),vi=W2*r1/A.P-vd,p=((270-nu(vi))%360+360)%360;
     OB.v=Math.sqrt(vi*vi+2*A.GM/r0)/1000;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=1.5*Math.PI*Math.sqrt(at**3/mu);
     if(!await aim(e=>{OB.p=((p+e/D)%360+360)%360},B,rcap,.35,.01))return'Couldn’t plan this transfer automatically — try another launch body or target';
     OB.route=A.n+' → '+B.n;OB.Q=B.n;if(!OB.userView)OB.view='Follow';return null;
@@ -795,7 +919,7 @@ async function planTransfer(){
   if(A.n==='Earth')on.Moon=true;
 
   const mu=Q.GM,rA=rel==='moon'?r0:A.a;let prev=rA,ttrSum=0,vf,p=0;
-  seq.forEach((T,i)=>{const aim_=T.a*(T.a>=prev?1.03:.97),at=(prev+aim_)/2;
+  seq.forEach((T,i)=>{const aim_=T.a*(T.a>=prev?LV.o:LV.i),at=(prev+aim_)/2;
     if(i===0){const vd=Math.sqrt(mu*(2/rA-1/at));
       if(rel==='moon')vf=vd;else{const vA=W2*A.a/A.P,vi=Math.abs(vd-vA),out=vd>vA;vf=Math.sqrt(vi*vi+2*A.GM/r0);p=((out?90:270)-nu(vi)+720)%360}}
     ttrSum+=Math.PI*Math.sqrt(at**3/mu);prev=T.a});
@@ -807,7 +931,7 @@ async function planTransfer(){
   let tdep=0;for(let i=0;i<K;i++)tdep+=W2*Math.sqrt(((r0+RAa[i])/2)**3/A.GM);
   if(rel!=='moon'&&mov(A))p=(p+W2*tdep/A.P/D)%360;
   OB.v=(K?Sp[0]:vf)/1000;OB.pump=K?[...Sp.slice(1),vf]:null;OB.a=0;OB.dir=1;OB.p=p;OB.tmax=tdep+1.7*ttrSum;
-  const ttrOf=sq=>{let pr=rA,sum=0;sq.forEach(T=>{const am=T.a*(T.a>=pr?1.03:.97),at=(pr+am)/2;sum+=Math.PI*Math.sqrt(at**3/mu);pr=T.a});return sum};
+  const ttrOf=sq=>{let pr=rA,sum=0;sq.forEach(T=>{const am=T.a*(T.a>=pr?LV.o:LV.i),at=(pr+am)/2;sum+=Math.PI*Math.sqrt(at**3/mu);pr=T.a});return sum};
   const crossing=async(T,R_,C,dir)=>{let rp=null,res=null;
     const stop=(t,x,y,vx,vy,pt,px,py)=>{const q=pos(C,t),r=Math.hypot(x-q[0],y-q[1]);
       if(rp!==null&&dir*(rp-R_)>0&&dir*(r-R_)<=0&&r!==rp){const f=(R_-rp)/(r-rp),tc=pt+(t-pt)*f,qc=pos(C,tc);res={t:tc,x:px+(x-px)*f,y:py+(y-py)*f,qx:qc[0],qy:qc[1]};return true}
@@ -822,7 +946,7 @@ async function planTransfer(){
     }
     T.ph=base;
     if(!last){
-      const nextA=seq[si+1].a*(seq[si+1].a>T.a?1.06:.94),mu0=BI.Sun.GM,sf=SOI(T);
+      const nextA=seq[si+1].a*(seq[si+1].a>T.a?LV.ao:LV.ai),mu0=BI.Sun.GM,sf=SOI(T);
       const meas=async e=>{T.ph=base+e;let inside=false;
         const r=await osim(true,OB.tmax,{stop:(t,x,y)=>{const q=pos(T,t),d=Math.hypot(x-q[0],y-q[1]);if(d<sf)inside=true;return inside&&d>4*sf}});
         if(r.hit||!inside)return 9;
@@ -885,7 +1009,7 @@ function oresults(){
   $('ores').innerHTML=it.map(([l,v,u,w,fm])=>'<div class="'+(w?'w2 fd':'')+'"><small>'+l+'</small><b'+(w?' style="font-size:19px"':'')+'>'+v+'</b><i>'+u+'</i>'+(fm?'<em>'+fm+'</em>':'')+'</div>').join('');
 }
 let lastLB=LB;
-function orbRestart(){const farAway=ob&&ob.Tend>0&&otm>.03*ob.Tend,lbChanged=LB!==lastLB;lastLB=LB;if(farAway||lbChanged){VO=null;ZO=1;PN[0]=PN[1]=0}orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;paceSt='';domKeep='';oresults();icon()}
+function orbRestart(){const farAway=ob&&ob.Tend>0&&otm>.03*ob.Tend,lbChanged=LB!==lastLB;lastLB=LB;if(farAway||lbChanged){VO=null;ZO=1;PN[0]=PN[1]=0}orbCalc();otm=0;oplay=ob.Ts>1;landAt=0;rateCur=0;capSeen=false;cap1Seen=false;capAt=0;bnIdx=0;paceSt='';domKeep='';oresults();icon();buildEntry()}
 function osync(){
   const m=lim();const ge=$('ogeo');if(ge)ge.hidden=LB!=='Earth';
   OC.forEach(([k,,,mn,mx])=>{const n=$('on'+k),r=$('or'+k),M=k==='v'?m.v:k==='h'?m.h:mx;
@@ -943,38 +1067,117 @@ function clearTgt(){if(!OB.tgt)return;cancelPlan();OB.tgt=null;OB.Q=null;OB.via=
 function buildTarget(){
   const c=$('otg');c.innerHTML='';
   const mk=(n,on_,fn)=>{const e=document.createElement('button');e.textContent=n;e.className=on_?'on':'';e.onclick=fn;c.appendChild(e)};
-  mk('None',!OB.tgt,()=>{cancelPlan();OB.tgt=null;OB.Q=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0);OB.view=OB.view==='Target'?'Local':OB.view;buildTarget();orbRestart();osync()});
+  mk('None',!OB.tgt,()=>{cancelPlan();OB.tgt=null;OB.Q=null;OB.via=null;OB.pump=null;winReset();OB.view=OB.view==='Target'?'Local':OB.view;buildTarget();orbRestart();osync();buildDate()});
   BD.filter(b=>on[b.n]&&b.n!==LB&&b.n!=='Sun').forEach(b=>mk(b.n,b.n===OB.tgt,()=>{OB.tgt=b.n;replan()}));
   if(OB.tgt)mk('Re-aim',false,()=>replan());
-  $('otn').textContent=OB.tgt?'Route: '+OB.route+'. Burns are kept small: orbit-raising at perigee, gravity assists where they help, and an elliptical (not circular) capture.':'Optional. Pick a second body and the launch values are set automatically so the satellite ends up orbiting it.';
+  $('otn').textContent=OB.tgt?'Route: '+OB.route+'. '+(OB.speed?'Quicker trip: a bigger launch burn and a harder braking burn at arrival, with orbit-raising at perigee and an elliptical (not circular) capture.':'Burns are kept small: orbit-raising at perigee, gravity assists where they help, and an elliptical (not circular) capture.'):'Optional. Pick a second body and the launch values are set automatically so the satellite ends up orbiting it.';
+  buildSpeed();
 }
 let planSeq=0,planRun=Promise.resolve();
 let planFreeze=false;
 function busy(on_,txt){planFreeze=!!on_;const e=$('busy');if(!e)return;e.hidden=!on_;if(txt)$('busyt').textContent=txt}
-function planProg(n){const pc=Math.min(97,Math.round(100*(1-Math.exp(-n/70))));$('busyt').textContent='Running more calculations… '+pc+'%'}
-function cancelPlan(){planSeq++;curPlan.cancelled=true;busy(false)}
-async function replan(){
-  const id=++planSeq;curPlan.cancelled=true;busy(true,'Running calculations…');
+function planProg(n){const pc=Math.min(97,Math.round(100*(1-Math.exp(-n/70))));$('busyt').textContent=cmpTxt||('Running more calculations… '+pc+'%')}
+function cancelPlan(){planSeq++;cmpTok++;cmpTxt='';if(cmpKeepSp!==null){OB.speed=cmpKeepSp;cmpKeepSp=null}curPlan.cancelled=true;busy(false)}
+let cmpTok=0,cmpTxt='',cmpKeepSp=null;
+const cmpKey=()=>[LB,OB.tgt,Math.round(OB.h),OB.real?OB.date:'x'].join('|');
+const cmpPut=(k,v)=>{const key=cmpKey();if(OB.cmpKey!==key){OB.cmpKey=key;OB.cmp={}}OB.cmp[k]=v};
+const cmpGet=()=>OB.cmpKey===cmpKey()?OB.cmp:{};
+async function replan(opt){
+  opt=opt||{};
+  const id=++planSeq;curPlan.cancelled=true;if(!opt.cmp){cmpTok++;cmpTxt='';if(cmpKeepSp!==null){OB.speed=cmpKeepSp;cmpKeepSp=null}}busy(true,opt.txt||'Running calculations…');
   try{await planRun}catch(e){}
   if(id!==planSeq)return;
   const my=curPlan={cancelled:false};planN=0;
   planRun=(async()=>{
-    await yld();let msg=null;
+    await yld();let msg=null;winPrepare();
     try{msg=await planTransfer()}catch(e){if(my.cancelled)return;msg='Planning stopped unexpectedly'}
     if(my.cancelled)return;
-    if(msg){toast(msg);OB.tgt=null;OB.via=null;OB.pump=null;OB.Q=null;BD.forEach(b=>b.ph=b.ph0)}
+    if(msg&&OB.speed>0&&!opt.cmp){ // this trip speed can't be flown on this route: fall back to the economy transfer
+      const k0=OB.speed,nm=SPD[k0][0];OB.speed=0;winPrepare();
+      try{msg=await planTransfer()}catch(e){if(my.cancelled)return;msg='Planning stopped unexpectedly'}
+      if(my.cancelled)return;
+      if(!msg){cmpPut(k0,{fail:1});toast(nm+' isn’t possible on this route — showing Economy')}
+    }
+    let failed=false;
+    if(msg){
+      if(opt.cmp){failed=true;OB.pump=null;OB.via=null;OB.Q=null;winReset()}
+      else{toast(msg);OB.tgt=null;OB.via=null;OB.pump=null;OB.Q=null;winReset()}
+    }else winFinish();
     buildBodies();buildLaunch();buildTarget();
-    await yld();orbRestart();osync();busy(false);
+    await yld();orbRestart();osync();
+    if(OB.tgt){if(failed)cmpPut(OB.speed,{fail:1});else if(ob&&ob.xfer)cmpPut(OB.speed,{t:ob.xfer.t,dv:ob.dvTot,d:OB.winT?OB.dateEff:0})}
+    buildSpeed();buildDate();if(!opt.keep)busy(false);
   })();
 }
+let entPrev=null;
+function entryPreview(){ // capture burn and first-orbit period for each entry style, from the same approach (the approach does not depend on the entry)
+  if(!OB.tgt||!ob||!ob.xfer||!ob.kep)return null;
+  const keep=OB.entry,save=ob,out=[];
+  try{for(let k=0;k<ENT.length;k++){OB.entry=k;if(k===keep){out.push({dv:save.xfer.dv,per:save.kep.per,tot:save.dvTot});continue}orbCalc();out.push(ob&&ob.xfer&&ob.kep?{dv:ob.xfer.dv,per:ob.kep.per,tot:ob.dvTot}:null)}}
+  finally{OB.entry=keep;ob=save}
+  return out.every(Boolean)?out:null;
+}
+function buildEntry(){
+  const w=$('enw');if(!w)return;
+  const show=!!OB.tgt&&!!ob&&!!ob.xfer&&!!ob.kep;
+  entPrev=show?entryPreview():null;
+  // only offer the choice when a wider orbit really does cut the braking burn on this route
+  const useful=!!entPrev&&entPrev.some((c,k)=>k&&entPrev[0].dv-c.dv>.5);
+  w.hidden=!useful;
+  if(!useful){if(show&&OB.entry!==0){OB.entry=0;orbRestart()} // this route gains nothing from a wider orbit: back to the standard entry
+    return}
+  const L=$('oen');L.innerHTML='';
+  ENT.forEach(([n,,,ds],k)=>{
+    const c=entPrev[k],r=document.createElement('div');r.className='kr sp'+(k===OB.entry?' on':'');r.setAttribute('role','button');r.tabIndex=0;
+    const d=entPrev[0].dv-c.dv,sub=k&&d>.5?'Saves '+f(d,0)+' m/s of braking':k&&d<-.5?'Needs '+f(-d,0)+' m/s more braking':ds,pill='<span>'+f(c.dv,0)+' m/s</span><span>orbit '+fmtT(c.per)+'</span>';
+    r.innerHTML='<span class="rd"></span><span class="nm">'+n+'<small>'+sub+'</small></span><span class="tf">'+pill+'</span>';
+    r.onclick=()=>setEntry(k);
+    r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();r.onclick()}};
+    L.appendChild(r);
+  });
+}
+function setEntry(k){
+  if(k===OB.entry||!OB.tgt)return;
+  OB.entry=k;
+  // the speed comparison holds total Δv for the old entry; keep the times and dates, drop the Δv so it is re-measured
+  if(OB.cmp)Object.keys(OB.cmp).forEach(i=>{const c=OB.cmp[i];if(c&&!c.fail)c.dv=null});
+  orbRestart();osync();
+  if(ob&&ob.xfer)cmpPut(OB.speed,{t:ob.xfer.t,dv:ob.dvTot,d:OB.winT?OB.dateEff:0});
+  buildEntry();buildSpeed();buildDate();
+}
+function buildSpeed(){
+  const w=$('spw');if(!w)return;
+  const show=!!OB.tgt&&OB.spdOk;w.hidden=!show;if(!show)return;
+  const C=cmpGet(),L=$('osp'),cur=cmpKeepSp!==null?cmpKeepSp:OB.speed;L.innerHTML='';
+  SPD.forEach(([n,,ds],k)=>{
+    const c=C[k],r=document.createElement('div');r.className='kr sp'+(k===cur?' on':'');r.setAttribute('role','button');r.tabIndex=0;
+    const sub=c&&c.fail?'Not possible on this route':(c&&c.d?(c.d<OB.date-432e5?'Open now · ':'Launch ')+fmtD(c.d):ds),pill=c&&!c.fail?'<span>'+fmtT(c.t)+'</span>'+(c.dv==null?'':'<span>Δv '+f(c.dv/1000,2)+' km/s</span>'):'—';
+    r.innerHTML='<span class="rd"></span><span class="nm">'+n+'<small>'+sub+'</small></span><span class="tf">'+pill+'</span>';
+    r.onclick=()=>{if(c&&c.fail)return;if(k===cur&&cmpKeepSp===null)return;cmpKeepSp=null;OB.speed=k;replan()};
+    r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();r.onclick()}};
+    L.appendChild(r);
+  });
+  $('spc').hidden=SPD.every((_,k)=>C[k]&&(C[k].fail||C[k].dv!=null));
+}
+async function compareSpeeds(){
+  if(!OB.tgt||!OB.spdOk)return;
+  const keep=OB.speed,mine=++cmpTok,C0=cmpGet();cmpKeepSp=keep;const todo=SPD.map((_,k)=>k).filter(k=>k!==keep&&(!C0[k]||(!C0[k].fail&&C0[k].dv==null)));
+  for(let j=0;j<todo.length;j++){
+    cmpTxt='Comparing trip speeds ('+(j+1)+' of '+todo.length+')…';
+    OB.speed=todo[j];await replan({cmp:1,keep:1,txt:cmpTxt});await planRun;
+    if(mine!==cmpTok||!OB.tgt)return;
+  }
+  cmpTxt='';OB.speed=keep;cmpKeepSp=null;await replan({cmp:1});await planRun;
+}
+$('spc').onclick=compareSpeeds;
 let rsT=0;
 function orbRestartSoon(){clearTimeout(rsT);rsT=setTimeout(orbRestart,90)}
 function orbRestartBusy(){busy(true,'Running calculations…');setTimeout(()=>{try{orbRestart()}finally{busy(false)}},40)}
 function afterChange(){
-  if(OB.tgt&&(!on[OB.tgt]||OB.tgt===LB)){OB.tgt=null;OB.via=null;OB.pump=null;BD.forEach(b=>b.ph=b.ph0)}
+  if(OB.tgt&&(!on[OB.tgt]||OB.tgt===LB)){OB.tgt=null;OB.via=null;OB.pump=null;winReset()}
   buildTarget();if(OB.tgt)replan();else{orbRestartBusy();osync()}
 }
-buildBodies();buildLaunch();buildTarget();osync();
+buildBodies();buildLaunch();buildTarget();osync();buildDate();
 let rateCur=0,capSeen=false,orbBlend=0,capAt=0,lastDraw=0,bnIdx=0;
 const CM=2000;
 function clipSeg(x0,y0,x1,y1){
@@ -1202,5 +1405,5 @@ $('rpl').onclick=()=>{if(mode==='orbit'){if(otm>.03*ob.Tend){VO=null;ZO=1;PN[0]=
 $('kp2').onclick=e=>{OB.kep2=!OB.kep2;e.target.classList.toggle('on',OB.kep2)};
 calc();results();sync();icon();requestAnimationFrame(loop);
 </script>
-</body>
-</html>
+
+</body></html>
